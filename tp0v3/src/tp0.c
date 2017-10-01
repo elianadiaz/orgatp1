@@ -84,13 +84,10 @@ int isKeywords(char character) {
 	return FALSE;
 }
 
-int executePalindromic(char * buffer, int quantityCharacterInWord, FILE * fileInput, FILE * fileOutput) {
+int executePalindromic(char * buffer, int quantityCharacterInWord, FILE * fileOutput) {
 	buffer[quantityCharacterInWord] = '\0';
 	quantityCharacterInWord ++;
 	int itsPalindromic = verifyPalindromic(buffer, quantityCharacterInWord);
-	if (itsPalindromic == ERROR_MEMORY){
-		return ERROR_MEMORY;
-	}
 
 	if (itsPalindromic == TRUE) {
 		int result = fputs(buffer, fileOutput);
@@ -149,76 +146,6 @@ void * myRealloc(void * ptr, size_t tamanyoNew, int tamanyoOld) {
 	return ptrNew;
 }
 
-size_t osize = NULL;
-size_t isize = NULL;
-
-int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
-	char * ibuffer = (char *) malloc(ibytes*sizeof(char));
-	if (ibuffer == NULL) {
-		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria \n");
-		return ERROR_MEMORY;
-	}
-
-	// initialize the buffer
-	int i;
-	for (i = 0; i < ibytes; ++i) {
-		ibuffer[i] = '\0';
-	}
-
-	osize = obytes;
-	isize = ibytes;
-
-	int end = FALSE;
-	while (end == FALSE) {
-		int completeDelivery = FALSE;
-		int bytesReadAcum = 0;
-		size_t bytesToRead = ibytes;
-		// Lleno el buffer de entrada
-		while (completeDelivery == FALSE && end == FALSE) {
-			int bytesRead = read(ifd, ibuffer + bytesReadAcum, bytesToRead);
-			if (bytesRead == -1) {
-				fprintf(stderr, "[Error] Hubo un error en la lectura de datos del archivo. \n");
-				return ERROR_READ;
-			}
-			if (bytesRead == 0) {
-				end = TRUE;
-			}
-
-			bytesReadAcum += bytesRead;
-			bytesToRead = ibytes - bytesReadAcum;
-
-			if (bytesToRead <= 0) {
-				completeDelivery = TRUE;
-			}
-		}
-
-		// ACA DEBE DE PROCESAR LO Q LE LLEGO
-		int resultProcess = executeProcess(ibuffer, ofd, obytes);
-		// Si resultProcess == DESCARGAR DATOS EN SALIDA => guardo salida en file y limpio buffer
-			// Si ibuffer fue recorrido completo => vuelvo a cargar buffer de entrada
-			// Si ibuffer fue no recorrido completo => vuelvo a invocar executeProcess
-	}
-
-
-
-	/*char * obuffer = (char *) malloc(obytes*sizeof(char));
-	if (obuffer == NULL) {
-		free(ibuffer);
-		ibuffer = NULL;
-
-		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria \n");
-		return ERROR_MEMORY;
-	}
-
-
-
-	int resultProcess = executeProcess(ibuffer, bytesReadAcum, obytes);
-
-	return resultProcess;*/
-
-	return OKEY;
-}
-
 int executeProcess(FILE * fileInput, FILE * fileOutput) {
 	// Precondition: Files must be open.
 	int icharacter = fgetc(fileInput);
@@ -237,7 +164,7 @@ int executeProcess(FILE * fileInput, FILE * fileOutput) {
 			buffer[quantityCharacterInWord] = character;
 			quantityCharacterInWord ++;
 		} else {
-			int result = executePalindromic(buffer, quantityCharacterInWord, fileInput, fileOutput);
+			int result = executePalindromic(buffer, quantityCharacterInWord, fileOutput);
 
 			free(buffer);
 			buffer = NULL;
@@ -252,7 +179,7 @@ int executeProcess(FILE * fileInput, FILE * fileOutput) {
 	}
 
 	if (buffer != NULL) {
-		int result = executePalindromic(buffer, quantityCharacterInWord, fileInput, fileOutput);
+		int result = executePalindromic(buffer, quantityCharacterInWord, fileOutput);
 
 		free(buffer);
 		buffer = NULL;
