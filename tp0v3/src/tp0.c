@@ -429,10 +429,6 @@ int executeByMenu(int argc, char *argv[]) {
 	int longIndex = 0;
 	char opt = 0;
 
-	int oc;             /* option character */
-	char *b_opt_arg;
-
-
 	while ((opt = getopt_long(argc, argv, "VvhH:i:I:o:O::" ,
 				   longOptions, &longIndex )) != -1 && incorrectOption == FALSE && finish == FALSE) {
 		switch (opt) {
