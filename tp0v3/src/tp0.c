@@ -320,6 +320,87 @@ int executeWithParameters(char * pathInput, char * pathOutput) {
 	return executeResult;
 }
 
+int executeByMenu2(int argc, char *argv[]){
+	// Always begins with /
+	if (argc == 1) {
+		// Run with default parameters
+		return executeWithDefaultParameter(NULL, TRUE, TRUE);
+	}
+
+	char* inputValue; //= malloc(sizeof(char));
+	char* outputValue; // = malloc(sizeof(char));
+
+	int opt;
+	int opt_idx;
+
+	int incorrectOption = FALSE;
+	int finish = FALSE;
+	int result = OKEY;
+
+	const char* const op_sort = "hv:i:o:";
+
+	struct option op_long[] = {
+			//{"V",		no_argument,		0,  'V' },
+			{"version",	no_argument, 		0,  'v' },
+			//{"h",		no_argument,       	0,  'h' },
+			{"help",	no_argument,       	0,  'H' },
+			//{"i",		required_argument, 	0,  'i' },
+			{"input",	required_argument,  0,	'i' },
+			//{"o",		required_argument,	0,  'o' },
+			{"output",	required_argument, 	0,  'o' },
+			{0,			0,                 	0,   0  }
+		};
+
+	while(1){
+		opt = getopt_long(argc, argv, op_sort, op_long, &opt_idx);
+
+		if (opt == -1)
+		        	break;
+
+		switch(opt){
+		case 'V' :
+			result = executeVersion();
+			finish = TRUE;
+			break;
+		 case 'v' :
+			 result = executeVersion();
+			 finish = TRUE;
+			 break;
+		 case 'h' :
+			 result = executeHelp();
+			 finish = TRUE;
+			 break;
+		 case 'H' :
+			 result = executeHelp();
+			 finish = TRUE;
+			 break;
+		 case 'i' :
+			 inputValue = opt;
+			 break;
+		 case 'I' :
+			 inputValue = opt;
+			 break;
+		 case 'o' :
+			 outputValue = opt;
+			 break;
+		 case 'O' :
+			 outputValue = opt;
+			 break;
+		 default:
+			 incorrectOption = TRUE;
+		}
+	}
+	puts("Input value: ");
+	//puts(inputValue);puts("\n");
+	fprintf("%s\n",inputValue);
+	puts("Output value: ");
+	//puts(outputValue);puts("\n");
+	fprintf("%s\n",outputValue);
+
+
+
+}
+
 int executeByMenu(int argc, char *argv[]) {
 	// Always begins with /
 	if (argc == 1) {
@@ -327,18 +408,18 @@ int executeByMenu(int argc, char *argv[]) {
 		return executeWithDefaultParameter(NULL, TRUE, TRUE);
 	}
 
-	char * inputValue = NULL;
-	char * outputValue = NULL;
+	char* inputValue;
+	char* outputValue;
 
 	struct option longOptions[] = {
-		{"V",		no_argument,		0,  'V' },
+		//{"V",		no_argument,		0,  'V' },
 		{"version",	no_argument, 		0,  'v' },
-		{"h",		no_argument,       	0,  'h' },
+		//{"h",		no_argument,       	0,  'h' },
 		{"help",	no_argument,       	0,  'H' },
-		{"i",		optional_argument, 	0,  'i' },
-		{"input",	optional_argument,  0,	'I' },
-		{"o",		optional_argument,	0,  'o' },
-		{"output",	optional_argument, 	0,  'O' },
+		//{"i",		required_argument, 	0,  'i' },
+		{"input",	required_argument,  0,	'I' },
+		//{"o",		required_argument,	0,  'o' },
+		{"output",	required_argument, 	0,  'O' },
 		{0,			0,                 	0,   0  }
 	};
 
@@ -347,7 +428,11 @@ int executeByMenu(int argc, char *argv[]) {
 	int result = OKEY;
 	int longIndex = 0;
 	char opt = 0;
-	// TODO NO FUNCIONA BIEN CUANDO ES --input (cuando es largo)
+
+	int oc;             /* option character */
+	char *b_opt_arg;
+
+
 	while ((opt = getopt_long(argc, argv, "VvhH:i:I:o:O::" ,
 				   longOptions, &longIndex )) != -1 && incorrectOption == FALSE && finish == FALSE) {
 		switch (opt) {
@@ -368,16 +453,20 @@ int executeByMenu(int argc, char *argv[]) {
 				 finish = TRUE;
 				 break;
 			 case 'i' :
-				 inputValue = optarg;
+				 if(optarg)
+					 inputValue = optarg;
 				 break;
 			 case 'I' :
-				 inputValue = optarg;
+				 if(optarg)
+					 inputValue = optarg;
 				 break;
 			 case 'o' :
-				 outputValue = optarg;
+				 if(optarg)
+					 outputValue = optarg;
 				 break;
 			 case 'O' :
-				 outputValue = optarg;
+				 if(optarg)
+					 outputValue = optarg;
 				 break;
 			 default:
 				 incorrectOption = TRUE;
