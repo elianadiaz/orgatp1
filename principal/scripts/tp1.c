@@ -160,10 +160,10 @@ int executeByMenu(int argc, char **argv) {
 		return executeWithDefaultParameter(NULL, TRUE, TRUE);
 	}
 
-	char * inputValue;
-	char * outputValue;
-	char * iBufBytes;
-	char * oBufBytes;
+	char * inputValue = NULL;
+	char * outputValue = NULL;
+	char * iBufBytes = NULL;
+	char * oBufBytes = NULL;
 
 	/* Una cadena que lista las opciones cortas validas */
 	const char* const smallOptions = "Vhi:o:I:O:";
