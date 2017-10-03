@@ -1,0 +1,5 @@
+3 es okey
+
+17 no lo es
+
+33 y 434 son palíndromos. 123 no lo es
