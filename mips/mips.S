@@ -6,11 +6,11 @@
 	.abicalls
 	.align 2
 
-	.globl main
-	.ent main
-main:
+	.globl palindrome
+	.ent palindrome
+palindrome:
 #Inicializo
-#Encabezado Funcion main (ifd,buffer_size_read,ofd,buffer_size_write)
+#Encabezado Funcion palindrome (ifd,buffer_size_read,ofd,buffer_size_write)
 	.frame 	$fp, 40, ra
 	.set 	noreorder
 	.cpload	t9
@@ -25,7 +25,7 @@ main:
 	move $fp, sp
 	sw a0, 40($fp)
 
-	#Programa principal main
+	#Programa principal palindrome
 	lw a0, 40($fp)
 
 	li	v0, SYS_write
@@ -111,8 +111,8 @@ _final_palindromo:
 
 	jr	ra
 
-	.end main
-	.size main,.-main
+	.end palindrome
+	.size palindrome,.-palindrome
 
 	.ent	mystrlen
 mystrlen:
