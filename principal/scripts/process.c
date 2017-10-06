@@ -4,6 +4,7 @@
 
 #define FALSE 0
 #define TRUE 1
+#define LEXICO_SIZE 10
 
 enum ParameterState {
 	 OKEY = 0, INCORRECT_QUANTITY_PARAMS = 1, ERROR_MEMORY = 2, ERROR_READ = 3, ERROR_WRITE = 4, LOAD_I_BUFFER = 5
@@ -168,6 +169,17 @@ int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
 		}
 
 		if (findEnd != TRUE && isKeywords(character) == TRUE) {
+			if (lexico == NULL) {
+				lexico = malloc(LEXICO_SIZE * sizeof(char));
+			} else if (quantityCharacterInLexico >= LEXICO_SIZE) {
+				int rest = quantityCharacterInLexico % LEXICO_SIZE;
+				if (rest == 0) {
+					int multiplier = quantityCharacterInLexico / LEXICO_SIZE;
+					multiplier ++;
+					lexico = malloc(LEXICO_SIZE * multiplier * sizeof(char));
+				}
+			}
+
 			lexico = myRealloc(lexico, (quantityCharacterInLexico + 1)*sizeof(char), quantityCharacterInLexico);
 			if (lexico == NULL) {
 				fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
