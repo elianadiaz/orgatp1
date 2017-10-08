@@ -4,7 +4,7 @@
 
 #define FALSE 0
 #define TRUE 1
-#define LEXICO_SIZE 10
+#define LEXICO_BUFFER_SIZE 10
 
 enum ParameterState {
 	 OKEY = 0, INCORRECT_QUANTITY_PARAMS = 1, ERROR_MEMORY = 2, ERROR_READ = 3, ERROR_WRITE = 4, LOAD_I_BUFFER = 5
@@ -17,6 +17,7 @@ char * lexico = NULL;
 int quantityCharacterInLexico = 0;
 int savedInOFile = FALSE;
 char * obuffer = NULL;
+int bytesLexico = 0;
 
 char toLowerCase(char word) {
 	/* ASCII:
@@ -38,7 +39,7 @@ int verifyPalindromic(char * word, int quantityCharacterInWord) {
 		return FALSE;
 	}
 
-	if (word != NULL && quantityCharacterInWord == 1) {
+	if (quantityCharacterInWord == 1) {
 		// The word has one character
 		return TRUE;
 	}
@@ -143,7 +144,7 @@ int writeOBufferInOFile(int * amountSavedInOBuffer) {
 	while (completeDelivery == FALSE) {
 		int bytesWrite = write(oFileDescriptor, obuffer + bytesWriteAcum, bytesToWrite);
 		if (bytesWrite < 0) {
-			return ERROR_READ;
+			return ERROR_WRITE;
 		}
 
 		bytesWriteAcum += bytesWrite;
@@ -170,17 +171,14 @@ int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
 
 		if (findEnd != TRUE && isKeywords(character) == TRUE) {
 			if (lexico == NULL) {
-				lexico = malloc(LEXICO_SIZE * sizeof(char));
-			} else if (quantityCharacterInLexico >= LEXICO_SIZE) {
-				int rest = quantityCharacterInLexico % LEXICO_SIZE;
-				if (rest == 0) {
-					int multiplier = quantityCharacterInLexico / LEXICO_SIZE;
-					multiplier ++;
-					lexico = malloc(LEXICO_SIZE * multiplier * sizeof(char));
-				}
+				lexico = malloc(LEXICO_BUFFER_SIZE * sizeof(char));
+				bytesLexico = LEXICO_BUFFER_SIZE;
+			} else if (quantityCharacterInLexico >= bytesLexico) {
+				int bytesLexicoPreview = bytesLexico;
+				bytesLexico += LEXICO_BUFFER_SIZE;
+				lexico = myRealloc(lexico, bytesLexico*sizeof(char), bytesLexicoPreview);
 			}
 
-			lexico = myRealloc(lexico, (quantityCharacterInLexico + 1)*sizeof(char), quantityCharacterInLexico);
 			if (lexico == NULL) {
 				fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
 				return ERROR_MEMORY;

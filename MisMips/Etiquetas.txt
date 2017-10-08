@@ -1,0 +1,100 @@
+toLowerCase			OKEY
+	$L18		$IfNotLower
+	
+verifyPalindromic			OKEY	
+	$L21		$IfPalindromicFalse
+	$L20		$VerifyWhenOneCharacter
+	$L22		$VerifyWhenTwoCharacteres
+	$L24		$IfPalindromicTrue
+	$L23		$VerifyWhenMoreThanOneCharacter
+	$L25		$WhileMirror
+	$L29		$WhileMirrorConditionLastWithMiddle
+	$L30		$WhileMirrorConditionValidPalindromicTrue
+	$L27		$WhileMirrorContent
+	$L31		$ContinuedInWhileMirror
+	$L26		$WhileMirrorFinalized
+	$L19		$ReturnVerifyPalindromic
+	
+	
+isKeywords			OKEY
+	$L35		$VerifyCharacter-a-z
+	$L36		$VerifyCharacter-0-9
+	$L37		$VerifyCharacter-
+	$L34		$ReturnIsKeywordsTrue
+	$L33		$ReturnIsKeywordsFalse
+	$L32		$ReturnIsKeywords
+	
+	
+myRealloc			OKEY
+	$L39		$MyReallocContinueValidations
+	$L40		$MyReallocContinueValidationsWithMemory
+	$L41		$MyReallocContinueWithLoadCharacters
+	$L42		$MyReallocLoadCharacters
+	$L43		$MyReallocWhileLoadCharacter
+	$L45		$MyReallocContinueWhileLoad
+	$L44		$MyReallocFinalizedWhileLoad
+	$L38		$MyReallocReturn
+	
+	
+initializeBuffer		OKEY
+	$L47		$ForInitializeBuffer
+	$L50		$ForInitializeCharacter
+	$L46		$InitializeBufferReturn
+	
+	
+writeOBufferInOFile		OKEY
+	$L52		$WhileWriteOBufferInOFile
+	$L54		$GoInWhileWriteOBufferInOFile
+	$L55		$ContinueWriteOBufferInOFile
+	$L53		$WriteOBufferInOFileReturnOkey
+	$L51		$WriteOBufferInOFileReturn
+	
+	
+executePalindromeWrite		OKEY
+	$L58		$WhileExecPalindromeWrite
+	$L62		$VerifyCharacterToLoadInLexico
+	$L64		$VerifyMemoryFreeInLexico
+	$L65		$LoadCharacterInLexico
+	$L67		$LoadCharacter
+	$L63		$VerifyQuantityCharacterInLexico
+	$L72		$IncrementAmountToSaved
+	$L71		$ContinueVerificationAboutAmountToSaved
+	$L75		$LoadEnterInOBuffer
+	$L74		$LoadLexicoInOBufferToWriteFile
+	$L76		$ForLexicoInOBuffer
+	$L79		$InForLexicoInOBuffer
+	$L77		$WriteLexicoInOFile
+	$L80		$WriteInNewOBuffer
+	$L81		$MallocNewOBuffer
+	$L82		$InitializeNewOBuffer
+	$L73		$LoadLexicoInOBuffer
+	$L85		$LoadLineBeakInOBuffer
+	$L84		$LoadLexicoInOBufferNotWriteFile --	$LoadResultOkey
+	$L86		$ForLexicoInOBufferNotWriteFile
+	$L89		$GoInForLexicoInOBufferNotWriteFile
+	$L70		$FreeLexico
+	$L68		$VerifyLoadIBuffer
+	$L90		$IncrementIdx
+	$L59		$LeaveWhileExecPalindromeWrite
+	$L57		$ReturnExecutePalindromeWrite
+	
+
+palindrome
+	$L93 		$OBufferMalloc
+	$L92		$ReturnPalindrome
+	$L94		$InitializeBuffers
+	$L95		$ContinueProcessToLoadIBuffer
+	$L96		$WhilePalindrome
+	$L97		$FreeBuffers
+	$L100		$WhileLoadIBuffer
+	$L101		$VerifyIfWriteOFile
+	$L104		$ContinueValidationResultRead
+	$L105		$ReturnErrorRead
+	$L106		$ContinueAccumulatingBytesRead
+	$L109		$ContinueValidationResultExecutePalinWrite
+	$L111		$LoadErrorOfExecutePalinWrite
+	$L112		$FreeOBufferInPalindrome
+	$L113		$FreeLexicoInPalindrome
+	$L114		$FreeLexicoPalin
+	$L116		$FreeAmountSavedInOBuffer
+	$L117		$LoadReturnPalindrome

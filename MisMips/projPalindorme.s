@@ -31,6 +31,13 @@ savedInOFile:
 	.size	obuffer, 4
 obuffer:
 	.space	4
+	.globl	bytesLexico
+	.globl	bytesLexico
+	.align	2
+	.type	bytesLexico, @object
+	.size	bytesLexico, 4
+bytesLexico:
+	.space	4
 	.text
 	.align	2
 	.globl	toLowerCase
@@ -436,7 +443,7 @@ $L54:
 	sw	$v0,36($fp)
 	lw	$v0,36($fp)
 	bgez	$v0,$L55
-	li	$v0,3			# 0x3
+	li	$v0,4			# 0x4
 	sw	$v0,40($fp)
 	b	$L51
 $L55:
@@ -527,59 +534,28 @@ $L62:
 	la	$t9,malloc
 	jal	$ra,$t9
 	sw	$v0,lexico
+	li	$v0,10			# 0xa
+	sw	$v0,bytesLexico
 	b	$L65
 $L64:
 	lw	$v0,quantityCharacterInLexico
-	slt	$v0,$v0,10
+	lw	$v1,bytesLexico
+	slt	$v0,$v0,$v1
 	bne	$v0,$zero,$L65
-	lw	$a0,quantityCharacterInLexico
-	li	$v0,1717960704			# 0x66660000
-	ori	$v0,$v0,0x6667
-	mult	$a0,$v0
-	mfhi	$v0
-	sra	$v1,$v0,2
-	sra	$v0,$a0,31
-	subu	$v1,$v1,$v0
-	move	$v0,$v1
-	sll	$v0,$v0,2
-	addu	$v0,$v0,$v1
-	sll	$v0,$v0,1
-	subu	$v0,$a0,$v0
+	lw	$v0,bytesLexico
 	sw	$v0,44($fp)
-	lw	$v0,44($fp)
-	bne	$v0,$zero,$L65
-	lw	$a0,quantityCharacterInLexico
-	li	$v0,1717960704			# 0x66660000
-	ori	$v0,$v0,0x6667
-	mult	$a0,$v0
-	mfhi	$v0
-	sra	$v1,$v0,2
-	sra	$v0,$a0,31
-	subu	$v0,$v1,$v0
-	sw	$v0,48($fp)
-	lw	$v0,48($fp)
-	addu	$v0,$v0,1
-	sw	$v0,48($fp)
-	lw	$v1,48($fp)
-	move	$v0,$v1
-	sll	$v0,$v0,2
-	addu	$v0,$v0,$v1
-	sll	$v0,$v0,1
-	move	$a0,$v0
-	la	$t9,malloc
-	jal	$ra,$t9
-	sw	$v0,lexico
-$L65:
-	lw	$v0,quantityCharacterInLexico
-	addu	$v0,$v0,1
+	lw	$v0,bytesLexico
+	addu	$v0,$v0,10
+	sw	$v0,bytesLexico
 	lw	$a0,lexico
-	move	$a1,$v0
-	lw	$a2,quantityCharacterInLexico
+	lw	$a1,bytesLexico
+	lw	$a2,44($fp)
 	la	$t9,myRealloc
 	jal	$ra,$t9
 	sw	$v0,lexico
+$L65:
 	lw	$v0,lexico
-	bne	$v0,$zero,$L68
+	bne	$v0,$zero,$L67
 	la	$a0,__sF+176
 	la	$a1,$LC1
 	la	$t9,fprintf
@@ -587,7 +563,7 @@ $L65:
 	li	$v0,2			# 0x2
 	sw	$v0,60($fp)
 	b	$L57
-$L68:
+$L67:
 	lw	$v1,lexico
 	lw	$v0,quantityCharacterInLexico
 	addu	$v1,$v1,$v0
@@ -596,54 +572,54 @@ $L68:
 	lw	$v0,quantityCharacterInLexico
 	addu	$v0,$v0,1
 	sw	$v0,quantityCharacterInLexico
-	b	$L69
+	b	$L68
 $L63:
 	lw	$v0,quantityCharacterInLexico
-	blez	$v0,$L69
+	blez	$v0,$L68
 	lw	$a0,lexico
 	lw	$a1,quantityCharacterInLexico
 	la	$t9,verifyPalindromic
 	jal	$ra,$t9
-	sw	$v0,48($fp)
-	lw	$v1,48($fp)
+	sw	$v0,44($fp)
+	lw	$v1,44($fp)
 	li	$v0,1			# 0x1
-	bne	$v1,$v0,$L71
+	bne	$v1,$v0,$L70
 	lw	$v0,84($fp)
 	lw	$v1,0($v0)
 	lw	$v0,quantityCharacterInLexico
 	addu	$v0,$v1,$v0
-	sw	$v0,44($fp)
+	sw	$v0,48($fp)
 	lw	$v0,84($fp)
 	lw	$v0,0($v0)
-	bgtz	$v0,$L73
+	bgtz	$v0,$L72
 	lw	$v1,savedInOFile
 	li	$v0,1			# 0x1
-	beq	$v1,$v0,$L73
-	b	$L72
-$L73:
-	lw	$v0,44($fp)
-	addu	$v0,$v0,1
-	sw	$v0,44($fp)
+	beq	$v1,$v0,$L72
+	b	$L71
 $L72:
-	lw	$v0,44($fp)
+	lw	$v0,48($fp)
+	addu	$v0,$v0,1
+	sw	$v0,48($fp)
+$L71:
+	lw	$v0,48($fp)
 	lw	$v1,osize
 	sltu	$v0,$v1,$v0
-	beq	$v0,$zero,$L74
+	beq	$v0,$zero,$L73
 	lw	$v0,84($fp)
 	lw	$a0,obuffer
-	lw	$a1,44($fp)
+	lw	$a1,48($fp)
 	lw	$a2,0($v0)
 	la	$t9,myRealloc
 	jal	$ra,$t9
 	sw	$v0,obuffer
 	lw	$v0,84($fp)
 	lw	$v0,0($v0)
-	bgtz	$v0,$L76
+	bgtz	$v0,$L75
 	lw	$v1,savedInOFile
 	li	$v0,1			# 0x1
-	beq	$v1,$v0,$L76
-	b	$L75
-$L76:
+	beq	$v1,$v0,$L75
+	b	$L74
+$L75:
 	lw	$v0,84($fp)
 	lw	$v1,obuffer
 	lw	$v0,0($v0)
@@ -655,15 +631,15 @@ $L76:
 	lw	$v0,0($v0)
 	addu	$v0,$v0,1
 	sw	$v0,0($v1)
-$L75:
+$L74:
 	sw	$zero,52($fp)
-$L77:
+$L76:
 	lw	$v0,52($fp)
 	lw	$v1,quantityCharacterInLexico
 	slt	$v0,$v0,$v1
-	bne	$v0,$zero,$L80
-	b	$L78
-$L80:
+	bne	$v0,$zero,$L79
+	b	$L77
+$L79:
 	lw	$v0,84($fp)
 	lw	$v1,obuffer
 	lw	$v0,0($v0)
@@ -681,35 +657,35 @@ $L80:
 	lw	$v0,52($fp)
 	addu	$v0,$v0,1
 	sw	$v0,52($fp)
-	b	$L77
-$L78:
+	b	$L76
+$L77:
 	lw	$a0,84($fp)
 	la	$t9,writeOBufferInOFile
 	jal	$ra,$t9
 	sw	$v0,56($fp)
 	lw	$v0,56($fp)
-	beq	$v0,$zero,$L81
+	beq	$v0,$zero,$L80
 	lw	$v0,56($fp)
 	sw	$v0,60($fp)
 	b	$L57
-$L81:
+$L80:
 	lw	$v0,84($fp)
 	sw	$zero,0($v0)
 	li	$v0,1			# 0x1
 	sw	$v0,savedInOFile
 	lw	$v0,obuffer
-	beq	$v0,$zero,$L82
+	beq	$v0,$zero,$L81
 	lw	$a0,obuffer
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,obuffer
-$L82:
+$L81:
 	lw	$a0,osize
 	la	$t9,malloc
 	jal	$ra,$t9
 	sw	$v0,obuffer
 	lw	$v0,obuffer
-	bne	$v0,$zero,$L83
+	bne	$v0,$zero,$L82
 	la	$a0,__sF+176
 	la	$a1,$LC2
 	la	$t9,fprintf
@@ -717,21 +693,21 @@ $L82:
 	li	$v0,2			# 0x2
 	sw	$v0,60($fp)
 	b	$L57
-$L83:
+$L82:
 	lw	$a0,osize
 	lw	$a1,obuffer
 	la	$t9,initializeBuffer
 	jal	$ra,$t9
-	b	$L71
-$L74:
+	b	$L70
+$L73:
 	lw	$v0,84($fp)
 	lw	$v0,0($v0)
-	bgtz	$v0,$L86
+	bgtz	$v0,$L85
 	lw	$v1,savedInOFile
 	li	$v0,1			# 0x1
-	beq	$v1,$v0,$L86
-	b	$L85
-$L86:
+	beq	$v1,$v0,$L85
+	b	$L84
+$L85:
 	lw	$v0,84($fp)
 	lw	$v1,obuffer
 	lw	$v0,0($v0)
@@ -743,15 +719,15 @@ $L86:
 	lw	$v0,0($v0)
 	addu	$v0,$v0,1
 	sw	$v0,0($v1)
-$L85:
+$L84:
 	sw	$zero,56($fp)
-$L87:
+$L86:
 	lw	$v0,56($fp)
 	lw	$v1,quantityCharacterInLexico
 	slt	$v0,$v0,$v1
-	bne	$v0,$zero,$L90
-	b	$L71
-$L90:
+	bne	$v0,$zero,$L89
+	b	$L70
+$L89:
 	lw	$v0,84($fp)
 	lw	$v1,obuffer
 	lw	$v0,0($v0)
@@ -769,24 +745,24 @@ $L90:
 	lw	$v0,56($fp)
 	addu	$v0,$v0,1
 	sw	$v0,56($fp)
-	b	$L87
-$L71:
+	b	$L86
+$L70:
 	lw	$a0,lexico
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,lexico
 	sw	$zero,quantityCharacterInLexico
-$L69:
+$L68:
 	lw	$v0,32($fp)
 	addu	$v1,$v0,1
 	lw	$v0,isize
-	bne	$v1,$v0,$L91
+	bne	$v1,$v0,$L90
 	li	$v0,1			# 0x1
 	sw	$v0,28($fp)
 	li	$v0,5			# 0x5
 	sw	$v0,36($fp)
 	b	$L58
-$L91:
+$L90:
 	lw	$v0,32($fp)
 	addu	$v0,$v0,1
 	sw	$v0,32($fp)
@@ -848,21 +824,21 @@ palindrome:
 	jal	$ra,$t9
 	sw	$v0,24($fp)
 	lw	$v0,24($fp)
-	bne	$v0,$zero,$L94
+	bne	$v0,$zero,$L93
 	la	$a0,__sF+176
 	la	$a1,$LC3
 	la	$t9,fprintf
 	jal	$ra,$t9
 	li	$v0,2			# 0x2
 	sw	$v0,60($fp)
-	b	$L93
-$L94:
+	b	$L92
+$L93:
 	lw	$a0,92($fp)
 	la	$t9,malloc
 	jal	$ra,$t9
 	sw	$v0,obuffer
 	lw	$v0,obuffer
-	bne	$v0,$zero,$L95
+	bne	$v0,$zero,$L94
 	la	$a0,__sF+176
 	la	$a1,$LC2
 	la	$t9,fprintf
@@ -873,8 +849,8 @@ $L94:
 	sw	$zero,24($fp)
 	li	$v0,2			# 0x2
 	sw	$v0,60($fp)
-	b	$L93
-$L95:
+	b	$L92
+$L94:
 	lw	$a0,84($fp)
 	lw	$a1,24($fp)
 	la	$t9,initializeBuffer
@@ -888,7 +864,7 @@ $L95:
 	jal	$ra,$t9
 	sw	$v0,28($fp)
 	lw	$v0,28($fp)
-	bne	$v0,$zero,$L96
+	bne	$v0,$zero,$L95
 	la	$a0,__sF+176
 	la	$a1,$LC4
 	la	$t9,fprintf
@@ -903,27 +879,27 @@ $L95:
 	sw	$zero,obuffer
 	li	$v0,2			# 0x2
 	sw	$v0,60($fp)
-	b	$L93
-$L96:
+	b	$L92
+$L95:
 	lw	$v0,28($fp)
 	sw	$zero,0($v0)
 	sw	$zero,32($fp)
 	sw	$zero,36($fp)
 	sw	$zero,40($fp)
-$L97:
+$L96:
 	lw	$v0,36($fp)
-	bne	$v0,$zero,$L98
+	bne	$v0,$zero,$L97
 	lw	$v0,40($fp)
-	bne	$v0,$zero,$L98
+	bne	$v0,$zero,$L97
 	sw	$zero,44($fp)
 	sw	$zero,48($fp)
 	lw	$v0,84($fp)
 	sw	$v0,52($fp)
-$L101:
+$L100:
 	lw	$v0,44($fp)
-	bne	$v0,$zero,$L102
+	bne	$v0,$zero,$L101
 	lw	$v0,36($fp)
-	bne	$v0,$zero,$L102
+	bne	$v0,$zero,$L101
 	lw	$v1,24($fp)
 	lw	$v0,48($fp)
 	addu	$v0,$v1,$v0
@@ -935,7 +911,7 @@ $L101:
 	sw	$v0,56($fp)
 	lw	$v1,56($fp)
 	li	$v0,-1			# 0xffffffffffffffff
-	bne	$v1,$v0,$L105
+	bne	$v1,$v0,$L104
 	la	$a0,__sF+176
 	la	$a1,$LC5
 	la	$t9,fprintf
@@ -953,21 +929,21 @@ $L101:
 	jal	$ra,$t9
 	sw	$zero,28($fp)
 	lw	$v0,lexico
-	beq	$v0,$zero,$L106
+	beq	$v0,$zero,$L105
 	lw	$a0,lexico
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,lexico
-$L106:
+$L105:
 	li	$v0,3			# 0x3
 	sw	$v0,60($fp)
-	b	$L93
-$L105:
+	b	$L92
+$L104:
 	lw	$v0,56($fp)
-	bne	$v0,$zero,$L107
+	bne	$v0,$zero,$L106
 	li	$v0,1			# 0x1
 	sw	$v0,36($fp)
-$L107:
+$L106:
 	lw	$v1,48($fp)
 	lw	$v0,56($fp)
 	addu	$v0,$v1,$v0
@@ -977,16 +953,16 @@ $L107:
 	subu	$v0,$v1,$v0
 	sw	$v0,52($fp)
 	lw	$v0,52($fp)
-	bne	$v0,$zero,$L101
+	bne	$v0,$zero,$L100
 	li	$v0,1			# 0x1
 	sw	$v0,44($fp)
-	b	$L101
-$L102:
+	b	$L100
+$L101:
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L97
+	beq	$v0,$zero,$L96
 	lw	$v0,24($fp)
 	lb	$v0,0($v0)
-	beq	$v0,$zero,$L97
+	beq	$v0,$zero,$L96
 	lw	$a0,24($fp)
 	lw	$a1,28($fp)
 	la	$t9,executePalindromeWrite
@@ -994,71 +970,71 @@ $L102:
 	sw	$v0,56($fp)
 	lw	$v1,56($fp)
 	li	$v0,5			# 0x5
-	bne	$v1,$v0,$L110
+	bne	$v1,$v0,$L109
 	lw	$a0,84($fp)
 	lw	$a1,24($fp)
 	la	$t9,initializeBuffer
 	jal	$ra,$t9
-$L110:
+$L109:
 	lw	$v1,56($fp)
 	li	$v0,2			# 0x2
-	beq	$v1,$v0,$L112
+	beq	$v1,$v0,$L111
 	lw	$v1,56($fp)
 	li	$v0,4			# 0x4
-	beq	$v1,$v0,$L112
-	b	$L97
-$L112:
+	beq	$v1,$v0,$L111
+	b	$L96
+$L111:
 	li	$v0,1			# 0x1
 	sw	$v0,40($fp)
 	lw	$v0,56($fp)
 	sw	$v0,32($fp)
-	b	$L97
-$L98:
+	b	$L96
+$L97:
 	lw	$v0,24($fp)
-	beq	$v0,$zero,$L113
+	beq	$v0,$zero,$L112
 	lw	$a0,24($fp)
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,24($fp)
-$L113:
+$L112:
 	lw	$v0,obuffer
+	beq	$v0,$zero,$L113
+	lw	$v0,28($fp)
 	beq	$v0,$zero,$L114
 	lw	$v0,28($fp)
-	beq	$v0,$zero,$L115
-	lw	$v0,28($fp)
 	lw	$v0,0($v0)
-	blez	$v0,$L115
+	blez	$v0,$L114
 	lw	$a0,28($fp)
 	la	$t9,writeOBufferInOFile
 	jal	$ra,$t9
 	sw	$v0,56($fp)
 	lw	$v0,56($fp)
-	beq	$v0,$zero,$L115
+	beq	$v0,$zero,$L114
 	lw	$v0,56($fp)
 	sw	$v0,32($fp)
-$L115:
+$L114:
 	lw	$a0,obuffer
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,obuffer
-$L114:
+$L113:
 	lw	$v0,lexico
-	beq	$v0,$zero,$L117
+	beq	$v0,$zero,$L116
 	lw	$a0,lexico
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,lexico
-$L117:
+$L116:
 	lw	$v0,28($fp)
-	beq	$v0,$zero,$L118
+	beq	$v0,$zero,$L117
 	lw	$a0,28($fp)
 	la	$t9,free
 	jal	$ra,$t9
 	sw	$zero,28($fp)
-$L118:
+$L117:
 	lw	$v0,32($fp)
 	sw	$v0,60($fp)
-$L93:
+$L92:
 	lw	$v0,60($fp)
 	move	$sp,$fp
 	lw	$ra,72($sp)
@@ -1092,10 +1068,10 @@ main:
 	sw	$a1,68($fp)
 	lw	$v1,64($fp)
 	li	$v0,5			# 0x5
-	beq	$v1,$v0,$L120
+	beq	$v1,$v0,$L119
 	lw	$v1,64($fp)
 	li	$v0,3			# 0x3
-	beq	$v1,$v0,$L120
+	beq	$v1,$v0,$L119
 	la	$a0,__sF+176
 	la	$a1,$LC6
 	lw	$a2,64($fp)
@@ -1103,8 +1079,8 @@ main:
 	jal	$ra,$t9
 	li	$v0,1			# 0x1
 	sw	$v0,40($fp)
-	b	$L119
-$L120:
+	b	$L118
+$L119:
 	lw	$v0,68($fp)
 	addu	$v0,$v0,4
 	lw	$a0,0($v0)
@@ -1123,7 +1099,7 @@ $L120:
 	sw	$v0,36($fp)
 	lw	$v1,64($fp)
 	li	$v0,5			# 0x5
-	bne	$v1,$v0,$L121
+	bne	$v1,$v0,$L120
 	lw	$v0,68($fp)
 	addu	$v0,$v0,8
 	lw	$a0,0($v0)
@@ -1142,7 +1118,7 @@ $L120:
 	la	$t9,atoi
 	jal	$ra,$t9
 	sw	$v0,28($fp)
-$L121:
+$L120:
 	lw	$a0,24($fp)
 	lw	$a1,32($fp)
 	lw	$a2,28($fp)
@@ -1150,7 +1126,7 @@ $L121:
 	la	$t9,palindrome
 	jal	$ra,$t9
 	sw	$v0,40($fp)
-$L119:
+$L118:
 	lw	$v0,40($fp)
 	move	$sp,$fp
 	lw	$ra,56($sp)
