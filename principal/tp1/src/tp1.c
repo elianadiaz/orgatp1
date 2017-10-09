@@ -24,7 +24,7 @@ size_t ibytes = 1;
 size_t obytes = 1;
 
 enum ParameterState {
-	 OKEY = 0, INCORRECT_QUANTITY_PARAMS = 1, INCORRECT_MENU = 2, ERROR_FILE = 3, ERROR_MEMORY = 4, ERROR_READ = 5, ERROR_BYTES = 6
+	 OKEY = 0, INCORRECT_QUANTITY_PARAMS = 1, INCORRECT_MENU = 2, ERROR_FILE = 3, ERROR_BYTES = 6
 };
 
 int executeHelp() {
