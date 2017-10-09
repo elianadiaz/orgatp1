@@ -24,16 +24,216 @@
 #define BYTES_MENSAJE_ERROR_MEMORIA_AMOUNT_SAVED 64
 #define BYTES_MENSAJE_ERROR_LECTURA_ARCHIVO	60
 
+# Para mymalloc y myfree
+
+#define MYMALLOC_SIGNATURE 0xdeadbeef
+
+#ifndef PROT_READ
+#define PROT_READ 0x01
+#endif
+
+#ifndef PROT_WRITE
+#define PROT_WRITE 0x02
+#endif
+
+#ifndef MAP_PRIVATE
+#define MAP_PRIVATE 0x02
+#endif
+
+#ifndef MAP_ANON
+#define MAP_ANON 0x1000
+#endif
+
+
+##-----	mymalloc -----##
+
+	.text
+	.align	2
+	.globl	mymalloc
+	.ent	mymalloc
+mymalloc:
+	subu	sp, sp, 56
+	sw	ra, 48(sp)
+	sw	$fp, 44(sp)
+	sw	a0, 40(sp)  # Temporary: original allocation size.
+	sw	a0, 36(sp)  # Temporary: actual allocation size.
+	li	t0, -1
+	sw	t0, 32(sp)  # Temporary: return value (defaults to -1).
+#if 0
+	sw	a0, 28(sp)  # Argument building area (#8?).
+	sw	a0, 24(sp)  # Argument building area (#7?).
+	sw	a0, 20(sp)  # Argument building area (#6).
+	sw	a0, 16(sp)  # Argument building area (#5).
+	sw	a0, 12(sp)  # Argument building area (#4, a3).
+	sw	a0,  8(sp)  # Argument building area (#3, a2).
+	sw	a0,  4(sp)  # Argument building area (#2, a1).
+	sw	a0,  0(sp)  # Argument building area (#1, a0).
+#endif
+	move	$fp, sp
+
+	# Adjust the original allocation size to a 4-byte boundary.
+	#
+	lw	t0, 40(sp)
+	addiu	t0, t0, 3
+	and	t0, t0, 0xfffffffc
+	sw	t0, 40(sp)
+
+	# Increment the allocation size by 12 units, in order to 
+	# make room for the allocation signature, block size and
+	# trailer information.
+	#
+	lw	t0, 40(sp)
+	addiu	t0, t0, 12
+	sw	t0, 36(sp)
+
+	# mmap(0, sz, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0)
+	#
+	li	v0, SYS_mmap
+	li	a0, 0
+	lw	a1, 36(sp)
+	li	a2, PROT_READ|PROT_WRITE
+	li	a3, MAP_PRIVATE|MAP_ANON
+
+	# According to mmap(2), the file descriptor 
+	# must be specified as -1 when using MAP_ANON.
+	#
+	li	t0, -1
+	sw	t0, 16(sp)
+
+	# Use a trivial offset.
+	#
+	li	t0, 0
+	sw	t0, 20(sp)
+
+	# XXX TODO.
+	#
+	sw	zero, 24(sp)
+	sw	zero, 28(sp)
+
+	# Excecute the syscall, save the return value.
+	#
+	syscall
+	sw	v0, 32(sp)
+	beqz	v0, mymalloc_return
+
+	# Success. Check out the allocated pointer.
+	#
+	lw	t0, 32(sp)
+	li	t1, MYMALLOC_SIGNATURE
+	sw	t1, 0(t0)
+
+	# The actual allocation size goes right after the signature.
+	#
+	lw	t0, 32(sp)
+	lw	t1, 36(sp)
+	sw	t1,  4(t0)
+
+	# Trailer information.
+	#
+	lw	t0, 36(sp) # t0: actual allocation size.
+	lw	t1, 32(sp) # t1: Pointer.
+	addu	t1, t1, t0 # t1 now points to the trailing 4-byte area.
+	xor	t2, t0, MYMALLOC_SIGNATURE
+	sw	t2, -4(t1)
+
+	# Increment the result pointer.
+	#
+	lw	t0, 32(sp)
+	addiu	t0, t0, 8
+	sw	t0, 32(sp)
+
+mymalloc_return:
+	# Restore the return value.
+	#
+	lw	v0, 32(sp)
+
+	# Destroy the stack frame.
+	#
+	move	sp, $fp
+	lw	ra, 48(sp)
+	lw	$fp, 44(sp)
+	addu	sp, sp, 56
+
+	j	ra
+	.end	mymalloc
+
+
+##-----	myfree -----##
+
+	.globl	myfree
+	.ent	myfree
+myfree:
+	subu	sp, sp, 40
+	sw	ra, 32(sp)
+	sw	$fp, 28(sp)
+	sw	a0, 24(sp)  # Temporary: argument pointer.
+	sw	a0, 20(sp)  # Temporary: actual mmap(2) pointer.
+	move	$fp, sp
+
+	# Calculate the actual mmap(2) pointer.
+	#
+	lw	t0, 24(sp)
+	subu	t0, t0, 8
+	sw	t0, 20(sp)
+
+	# XXX Sanity check: the argument pointer must be checked
+	# in before we try to release the memory block.
+	#
+	# First, check the allocation signature.
+	#
+	lw	t0, 20(sp) # t0: actual mmap(2) pointer.
+	lw	t1, 0(t0)
+	bne	t1, MYMALLOC_SIGNATURE, myfree_die
+
+	# Second, check the memory block trailer.
+	#
+	lw	t0, 20(sp) # t0: actual mmap(2) pointer.
+	lw	t1, 4(t0)  # t1: actual mmap(2) block size.
+	addu	t2, t0, t1 # t2: trailer pointer.
+	lw	t3, -4(t2)
+	xor	t3, t3, t1
+	bne	t3, MYMALLOC_SIGNATURE, myfree_die
+
+	# All checks passed. Try to free this memory area.
+	#
+	li	v0, SYS_munmap
+	lw	a0, 20(sp) # a0: actual mmap(2) pointer.
+	lw	a1, 4(a0)  # a1: actual allocation size.
+	syscall
+
+	# Bail out if we cannot unmap this memory block.
+	#
+	bnez	v0, myfree_die
+
+	# Success.
+	#
+	j myfree_return
+
+myfree_die:
+	# Generate a segmentation fault by writing to the first
+	# byte of the address space (a.k.a. the NULL pointer).
+	#
+	sw t0, 0(zero)
+
+myfree_return:
+	# Destroy the stack frame.
+	#
+	move	sp, $fp
+	lw	ra, 32(sp)
+	lw	$fp, 28(sp)
+	addu	sp, sp, 40
+
+	j	ra
+	.end	myfree
+
 
 ##-----	toLowerCase -----##
 
-	.text
-	.abicalls
 	.align 		2
 	.globl 		toLowerCase 
 	.ent 		toLowerCase
 toLowerCase:
-	.frame		$fp,24,ra		# vars= 8, regs= 2/0, args= 0, extra= 8
+	.frame		$fp,24,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -66,17 +266,15 @@ $IfNotLower:
 	addu		sp,sp,24
 	j		ra					# Jump and return
 	.end		toLowerCase
-	.size		toLowerCase, .-toLowerCase
 
 	
 ##-----	verifyPalindromic -----##
 
-	.text
 	.align		2
 	.globl		verifyPalindromic
 	.ent		verifyPalindromic
 verifyPalindromic:
-	.frame		$fp,72,ra			# vars= 32, regs= 3/0, args= 16, extra= 8 => 72 = 32 + 16 + 3*8
+	.frame		$fp,72,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -114,12 +312,12 @@ $VerifyWhenTwoCharacteres:
 	bne		v1,v0,$VerifyWhenMoreThanOneCharacter	# if (quantityCharacterInWord != 2) goto VerifyWhenMoreThanOneCharacter
 	
 	# Paso a minuscula el primer caracter del lexico
-	lw		v0,72($fp)				# Cargo word
+	lw		v0,72($fp)				# Cargo * word
 	lb		v0,0(v0)				# Cargo el primer caracter apuntado por word	
 	move		a0,v0					# Cargo el primer caracter que estaba en v0, en a0. Voy a enviarlo por parametro a la funcion toLoweCase
 	la		t9,toLowerCase				# Cargo la direccion de la funcion toLowerCase
 	jal		ra,t9					# Salto a la funcion toLowerCase	
-	sb		v0,24($fp)				# Cargo el resultado en v0 en 24($fp)  TODO
+	sb		v0,24($fp)				# Cargo el resultado en v0 en 24($fp).
 	
 	# Paso a minuscula el segundo caracter del lexico
 	lw		v0,72($fp)				# Cargo la direccion de memoria en donde esta word	
@@ -128,7 +326,7 @@ $VerifyWhenTwoCharacteres:
 	move		a0,v0					# Cargo el segundo caracter que estaba en v0, en a0. Voy a enviarlo por parametro a la funcion toLoweCase
 	la		t9,toLowerCase				# Cargo la direccion de la funcion toLowerCase
 	jal		ra,t9					# Salto a la funcion toLowerCase
-	sb		v0,25($fp)				# Cargo el resultado en v0 en 25($fp)  TODO
+	sb		v0,25($fp)				# Cargo el resultado en v0 en 25($fp).
 	
 	lb		v1,24($fp)				# Cargo el primer caracter en minuscula en v1
 	lb		v0,25($fp)				# Cargo el segundo caracter en minuscula en v0
@@ -140,34 +338,28 @@ $IfPalindromicTrue:
 	sw		v0,52($fp)
 	b		$ReturnVerifyPalindromic		# Salta siempre - goto ReturnVerifyPalindromic (con return TRUE)
 $VerifyWhenMoreThanOneCharacter:
-#	lw		a0,76($fp)						# Cargo quantityCharacterInWord
-#	divu	a0,a0,2							# Hago: quantityCharacterInWord / 2 
-#	sw		a0,32($fp)						# Guarda el resultado de la division en 32($fp). O sea, middle (double middle = (double)quantityCharacterInWord / 2;)
-
-	l.s		$f0,76($fp)				# Cargo quantityCharacterInWord  - TODO VER SI PONGO LA SIG EXPLICACION O LA OTRA l.s			
-									# f0,76($fp)	 Carga el double (la direccion apuntada contiene un double) en f0. La sintaxis es "l.s FRdest, addressLoad".
+	l.s		$f0,76($fp)				# Cargo quantityCharacterInWord
 	cvt.d.w	$f2,$f0					# Convierto el integer quantityCharacterInWord a double
-	l.d		$f0,doubleWord				# Cargo en f0 el valor 2 - TODO VER SI ESTO ES ASI TODO HABIA ESCRITO  l.d	f0,$LC0
+	l.d		$f0,doubleWord			# Cargo en f0 el valor 2.
 	div.d	$f0,$f2,$f0				# Division con Double (double)quantityCharacterInWord / 2; - Sintaxis: div.d FRdest, FRsrc1, FRsrc2
-	s.d		$f0,32($fp)				# Guarda el resultado de la division en 32($fp). O sea, middle (double middle = (double)quantityCharacterInWord / 2;) - 
-								# TODO s.d			f0,32($fp)
-	sw		zero,40($fp)				# En 40($fp) se encuentra idx (int idx = 0;).
+	s.d		$f0,32($fp)				# Guarda el resultado de la division en 32($fp). O sea, middle (double middle = (double)quantityCharacterInWord / 2;)
+	sw		zero,40($fp)			# En 40($fp) se encuentra idx (int idx = 0;).
 	li		v0,TRUE					# En v0 esta la variable validPalindromic en TRUE, que es igual a 1 (int validPalindromic = TRUE;).
 	sw		v0,44($fp)				# Guarda en la direccion 44($fp) el valor de validPalindromic.
 	lw		v0,76($fp)				# Cargo quantityCharacterInWord en v0.
 	addu		v0,v0,-1				# Le resto 1 a quantityCharacterInWord y lo guardo en v0 (int last = quantityCharacterInWord - 1;).
 	sw		v0,48($fp)				# Guardo en la direccion 48($fp) la variable last.
 $WhileMirror:
-	l.s		$f0,40($fp)				# Cargo idx en a0. TODO: l.s			f0,40($fp)
+	l.s		$f0,40($fp)				# Cargo idx en f0.
 	cvt.d.w	$f2,$f0					# Convierto el integer idx a double y lo guardo en f2 para poder hacer la comparacion.
-	l.d		$f0,32($fp)				# Cargo en a0 la variable middle. TODO: l.d			f0,32($fp)
+	l.d		$f0,32($fp)				# Cargo en a0 la variable middle.
 	c.lt.d	$f2,$f0					# Compara la variable idx con la variable middle, y setea el condition flag en true si el primero (idx) es mas chico que el segundo (middle).
 	bc1t	$WhileMirrorConditionLastWithMiddle	# Si el condition flag es true, continua haciendo las comparaciones.
 	b		$WhileMirrorFinalized			# Si el condition flag es false, salta al final de la funcion, devolviendo el valor de la variable validPalindromic que seria TRUE.
 $WhileMirrorConditionLastWithMiddle:
-	l.s		$f0,48($fp)				# Cargo la variable last en f0. TODO: l.s			f0,48($fp)	
+	l.s		$f0,48($fp)				# Cargo la variable last en f0.
 	cvt.d.w	$f2,$f0					# Convierto el integer last a double y lo guardo en f2 para poder hacer la comparacion.
-	l.d		$f0,32($fp)				# Cargo en f0 el contenido de la variable middle. - TODO: l.d			f0,32($fp)
+	l.d		$f0,32($fp)				# Cargo en f0 el contenido de la variable middle.
 	c.lt.d	$f0,$f2					# Compara el contenido de la variable last con la variable middle, y setea el condition flag en true si 
 								# el primero (last) es mas chico que el segundo (middle).
 	bc1t	$WhileMirrorConditionValidPalindromicTrue	# Si el condition flag es true, continua haciendo las comparaciones.
@@ -179,20 +371,20 @@ $WhileMirrorConditionValidPalindromicTrue:
 	b		$WhileMirrorFinalized			# Salto para salir del while (bucle).
 $WhileMirrorContent:
 	# Voy a pasar a minuscula el caracter apuntado desde la izquierda.
-	lw		v1,72($fp)				# Cargo en v1 el contenido de la variable word.
+	lw		v1,72($fp)				# Cargo en v1 el contenido de la variable * word.
 	lw		v0,40($fp)				# Cargo en v0 el contenido de la variable idx.
 	addu		v0,v1,v0				# En v0 coloco el puntero a word corrido la cantidad indicada por la variable idx.
-	lb		v0,0(v0)				# Cargo en v0 la direccion de memoria (cero corrimiento).
+	lb		v0,0(v0)				# Cargo en v0 el contenido de la direccion de memoria (cero corrimiento).
 	move		a0,v0					# Paso a a0 el contenido de v0, que seria un unico caracter.
 	la		t9,toLowerCase				# Cargo la direccion de la funcion toLowerCase
 	jal		ra,t9					# Salto a la funcion toLowerCase para pasar el caracter a minuscula.
 	sb		v0,25($fp)				# Cargo el caracter contenido en v0 a la direccion de memoria 25($fp) - char firstCharacter = toLowerCase(word[idx]);
 	
 	# Voy a pasar a minuscula el caracter apuntado desde la derecha.
-	lw		v1,72($fp)				# Cargo en v1 el contenido de la variable word.
+	lw		v1,72($fp)				# Cargo en v1 el contenido de la variable * word.
 	lw		v0,48($fp)				# Cargo en v0 el contenido de la variable last.
 	addu		v0,v1,v0				# En v0 coloco el puntero a word corrido la cantidad indicada por la variable last.
-	lb		v0,0(v0)				# Cargo en v0 la direccion de memoria (cero corrimiento).
+	lb		v0,0(v0)				# Cargo en v0 el contenido de la direccion de memoria (cero corrimiento).
 	move		a0,v0					# Paso a a0 el contenido de v0, que seria un unico caracter.
 	la		t9,toLowerCase				# Cargo la direccion de la funcion toLowerCase
 	jal		ra,t9					# Salto a la funcion toLowerCase para pasar el caracter a minuscula.
@@ -221,7 +413,6 @@ $ReturnVerifyPalindromic:
 	addu		sp,sp,72
 	j		ra					# Jump and return
 	.end		verifyPalindromic
-	.size		verifyPalindromic, .-verifyPalindromic
 
 
 ##-----	isKeywords -----##
@@ -230,7 +421,7 @@ $ReturnVerifyPalindromic:
 	.globl		isKeywords
 	.ent		isKeywords
 isKeywords:
-	.frame		$fp,24,ra				# vars= 8, regs= 2/0, args= 0, extra= 8
+	.frame		$fp,24,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -302,7 +493,6 @@ $ReturnIsKeywords:
 	addu		sp,sp,24
 	j		ra					# Jump and return
 	.end		isKeywords
-	.size		isKeywords, .-isKeywords
 
 
 ##-----	myRealloc -----##
@@ -311,7 +501,7 @@ $ReturnIsKeywords:
 	.globl		myRealloc
 	.ent		myRealloc
 myRealloc:
-	.frame		$fp,64,ra				# vars= 24, regs= 3/0, args= 16, extra= 8	
+	.frame		$fp,64,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -335,23 +525,23 @@ myRealloc:
 	
 	# If (tamanyoNew == 0)
 	lw		a0,64($fp)				# Cargo en a0 la direccion de memoria guardada en la direccion 64($fp), o sea, la variable * ptr.
-	la		t9,free					# Cargo la direccion de la funcion free.
-	jal		ra,t9					# Ejecuto la funcion free.
+	la		t9,myfree					# Cargo la direccion de la funcion myfree.
+	jal		ra,t9					# Ejecuto la funcion myfree.
 	sw		zero,64($fp)			# Coloco el puntero apuntando a NULL (ptr = NULL;).
 	sw		zero,40($fp)			# Coloco en la direccion de memoria 40($fp) NULL, que seria el resultado de la funcion myRealloc.
 	b		$MyReallocReturn			# Salto incondicional para retornar resultado de myRealloc.
 $MyReallocContinueValidations:
 	lw		a0,68($fp)				# Cargo en a0 el contenido guardado en la direccion 68($fp), o sea, la variable tamanyoNew.
-	la		t9,malloc				# Cargo la direccion de la funcion malloc.
-	jal		ra,t9					# Ejecuto la funcion malloc.
-	sw		v0,24($fp)				# Guardo en la direccion 24($fp) el contenido de v0, que seria la direccion de la memoria asignada con malloc.
-	lw		v0,24($fp)				# Cargo en v0 la direccion de la memoria asignada con malloc (void * ptrNew = (void *) malloc(tamanyoNew);).
+	la		t9,mymalloc				# Cargo la direccion de la funcion mymalloc.
+	jal		ra,t9					# Ejecuto la funcion mymalloc.
+	sw		v0,24($fp)				# Guardo en la direccion 24($fp) el contenido de v0, que seria la direccion de la memoria asignada con mymalloc.
+	lw		v0,24($fp)				# Cargo en v0 la direccion de la memoria asignada con mymalloc (void * ptrNew = (void *) mymalloc(tamanyoNew);).
 	
 	# (ptrNew == NULL) ?
 	bne		v0,DIR_NULL,$MyReallocContinueValidationsWithMemory # If (ptrNew != NULL) goto MyReallocContinueValidationsWithMemory
 	lw		a0,64($fp)				# Cargo en a0 la direccion de memoria guardada en la direccion 64($fp), o sea, la variable * ptr.
-	la		t9,free					# Cargo la direccion de la funcion free.
-	jal		ra,t9					# Ejecuto la funcion free.
+	la		t9,myfree					# Cargo la direccion de la funcion myfree.
+	jal		ra,t9					# Ejecuto la funcion myfree.
 	sw		zero,64($fp)			# Coloco el puntero apuntando a NULL (ptr = NULL;).
 	sw		zero,40($fp)			# Coloco en la direccion de memoria 40($fp) NULL, que seria el resultado de la funcion myRealloc.
 	b		$MyReallocReturn			# Salto incondicional para retornar resultado de myRealloc.
@@ -361,7 +551,7 @@ $MyReallocContinueValidationsWithMemory:
 	
 	# (ptr == NULL) ?
 	lw		v0,24($fp)				# Cargo en v0 la direccion de memoria guardada en la direccion 24($fp), o sea, la variable * ptrNew, 
-								# que seria la direccion de la memoria asignada con malloc.
+								# que seria la direccion de la memoria asignada con mymalloc.
 	sw		v0,40($fp)				# Coloco en la direccion de memoria 40($fp) el contenido de v0 (* ptrNew), que seria el resultado de la funcion myRealloc.
 	b		$MyReallocReturn			# Salto incondicional para retornar resultado de myRealloc.
 $MyReallocContinueWithLoadCharacters:
@@ -410,11 +600,11 @@ $MyReallocContinueWhileLoad:
 	b		$MyReallocWhileLoadCharacter    	# Vuelvo a entrar al while
 $MyReallocFinalizedWhileLoad:
 	lw		a0,64($fp)				# Cargo en v0 el contenido guardado en la direccion 64($fp), que seria *PTR.
-	la		t9,free					# Cargo la direccion de la funcion free.
-	jal		ra,t9					# Ejecuto la funcion free.
+	la		t9,myfree					# Cargo la direccion de la funcion myfree.
+	jal		ra,t9					# Ejecuto la funcion myfree.
 	sw		zero,64($fp)			# Coloco el puntero apuntando a NULL (ptr = NULL;).
 	
-	lw		v0,24($fp)				# Cargo en v0 la direccion de memoria guardada en la direccion 24($fp), o sea, la variable * ptrNew, que seria la direccion de la memoria asignada con malloc..
+	lw		v0,24($fp)				# Cargo en v0 la direccion de memoria guardada en la direccion 24($fp), o sea, la variable * ptrNew, que seria la direccion de la memoria asignada con mymalloc..
 	sw		v0,40($fp)				# Guardo en la direccion de memoria 40($fp) el contenido de v0 (* ptrNew), que seria el resultado de la funcion myRealloc.		
 $MyReallocReturn:
 	lw		v0,40($fp)				# Cargo en v0 el resultado de la funcion myRealloc guardado en la direccion de memoria 40($fp).
@@ -424,7 +614,6 @@ $MyReallocReturn:
 	addu		sp,sp,64
 	j		ra					# Jump and return
 	.end		myRealloc
-	.size		myRealloc, .-myRealloc
 
 
 ##-----	initializeBuffer -----##
@@ -433,7 +622,7 @@ $MyReallocReturn:
 	.globl		initializeBuffer
 	.ent		initializeBuffer
 initializeBuffer:
-	.frame		$fp,24,ra				# vars= 8, regs= 2/0, args= 0, extra= 8	
+	.frame		$fp,24,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -476,7 +665,6 @@ $InitializeBufferReturn:
 	addu		sp,sp,24
 	j		ra					# Jump and return
 	.end		initializeBuffer
-	.size		initializeBuffer, .-initializeBuffer
 
 
 ##-----	writeOBufferInOFile -----##
@@ -485,7 +673,7 @@ $InitializeBufferReturn:
 	.globl		writeOBufferInOFile
 	.ent		writeOBufferInOFile
 writeOBufferInOFile:
-	.frame		$fp,64,ra				# vars= 24, regs= 3/0, args= 16, extra= 8
+	.frame		$fp,64,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -526,10 +714,6 @@ $GoInWhileWriteOBufferInOFile:
 	
 	lw		a2,32($fp)				# Cargo en a2 el contenido de la direccion de memoria 32($fp), que seria la variable bytesToWrite.
 	
-	# TODO ANTES ESTABA TODO ESTO PARA LA LLAMADA A write
-	#la		t9,write						
-	#jal		ra,t9
-	# TODO FIN DEL TODO - AGREGO LAS SIGUIENTES DOS LINEAS PARA REEMPLAZAR LAS ANTERIORES
 	li		v0, SYS_write
 	syscall				# Seria write: int bytesWrite = write(oFileDescriptor, obuffer + bytesWriteAcum, bytesToWrite);
 	
@@ -573,7 +757,6 @@ $WriteOBufferInOFileReturn:
 	addu		sp,sp,64
 	j		ra					# Jump and return
 	.end		writeOBufferInOFile
-	.size		writeOBufferInOFile, .-writeOBufferInOFile
 
 
 ##-----	executePalindromeWrite -----##
@@ -582,7 +765,7 @@ $WriteOBufferInOFileReturn:
 	.globl		executePalindromeWrite
 	.ent		executePalindromeWrite
 executePalindromeWrite:
-	.frame		$fp,80,ra				# vars= 40, regs= 3/0, args= 16, extra= 8	
+	.frame		$fp,80,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -647,17 +830,17 @@ $VerifyCharacterToLoadInLexico:
 	
 	# El caracter es una keyword.
 	lw		v0,lexico				# Cargo en v0 lo guardado en lexico.
-	bne		v0,DIR_NULL,$VerifyMemoryFreeInLexico   # Si el contenido de lexico no apunta a NULL, voy a verificar la memoria disponible para cargarle character (goto VerifyMemoryFreeInLexico).
+	bne		v0,DIR_NULL,$VerifyMemorymyfreeInLexico   # Si el contenido de lexico no apunta a NULL, voy a verificar la memoria disponible para cargarle character (goto VerifyMemorymyfreeInLexico).
 	
 	# Voy a asignar memoria a la variable lexico. lexico es igual a NULL.
 	li		a0,LEXICO_BUFFER_SIZE			# Cargo en a0 la cantidad de bytes a asignar por buffer a lexico (es un literal).
-	la		t9,malloc				# Cargo en t9 la direccion de la funcion malloc.
-	jal		ra,t9					# Ejecuto la funcion malloc.
-	sw		v0,lexico				# Guardo en lexico la memoria asignada con malloc (que esta en v0).
+	la		t9,mymalloc				# Cargo en t9 la direccion de la funcion mymalloc.
+	jal		ra,t9					# Ejecuto la funcion mymalloc.
+	sw		v0,lexico				# Guardo en lexico la memoria asignada con mymalloc (que esta en v0).
 	li		v0,LEXICO_BUFFER_SIZE			# Cargo en v0 el literal LEXICO_BUFFER_SIZE (cantidad de bytes a asignar por buffer a lexico).
 	sw		v0,bytesLexico				# Guardo el contenido de vo (LEXICO_BUFFER_SIZE) en la variable global bytesLexico.
 	b		$LoadCharacterInLexico			# Salto incondicional, voy a cargar caracter en lexico.
-$VerifyMemoryFreeInLexico:
+$VerifyMemorymyfreeInLexico:
 	lw		v0,quantityCharacterInLexico		# Cargo en v0 el contenido de quantityCharacterInLexico.
 	lw		v1,bytesLexico				# Cargo en v1 el contenido de bytesLexico.
 	slt		v0,v0,v1				# Verifico si quantityCharacterInLexico es mas chico que bytesLexico. Guardo resultado en v0 (TRUE o FALSE).
@@ -716,7 +899,7 @@ $VerifyQuantityCharacterInLexico:
 								# almacenado en v0 y que representaria a la variable itsPalindromic.
 	lw		v1,44($fp)				# Cargo en v1 lo que se encuentra en la direccion de memoria 44($fp) que seria el resultado de la funcion verifyPalindromic.
 	li		v0,TRUE					# Cargo en v0 TRUE (es el literal 1) para hacer luego la comparacion.
-	bne		v1,v0,$FreeLexico			# If (itsPalindromic != TRUE) goto FreeLexico.
+	bne		v1,v0,$myfreeLexico			# If (itsPalindromic != TRUE) goto myfreeLexico.
 	
 	# itsPalindromic is TRUE
 	
@@ -849,18 +1032,18 @@ $WriteInNewOBuffer:
 	
 	# obuffer != NULL ?
 	lw			v0,obuffer						# Cargo en v0 obuffer.
-	beq			v0,DIR_NULL,$MallocNewOBuffer	# If (obuffer == NULL) goto MallocNewOBuffer.
+	beq			v0,DIR_NULL,$mymallocNewOBuffer	# If (obuffer == NULL) goto mymallocNewOBuffer.
 	
-	# obuffer != NULL => free(obuffer) and obuffer = NULL.
+	# obuffer != NULL => myfree(obuffer) and obuffer = NULL.
 	lw			a0,obuffer						# Cargo en a0 obuffer.
-	la			t9,free						# Cargo en t9 la direccion de memoria de free.
-	jal			ra,t9							# Ejecuto free sobre obuffer.
+	la			t9,myfree						# Cargo en t9 la direccion de memoria de myfree.
+	jal			ra,t9							# Ejecuto myfree sobre obuffer.
 	sw			zero,obuffer				# Asigno NULL a obuffer.
-$MallocNewOBuffer:
-	# obuffer = (char *) malloc(osize*sizeof(char));
+$mymallocNewOBuffer:
+	# obuffer = (char *) mymalloc(osize*sizeof(char));
 	lw			a0,osize						# Cargo en a0 osize.
-	la			t9,malloc						# Cargo en t9 la direccion de memoria de malloc.
-	jal			ra,t9							# Ejecuto malloc.
+	la			t9,mymalloc						# Cargo en t9 la direccion de memoria de mymalloc.
+	jal			ra,t9							# Ejecuto mymalloc.
 	sw			v0,obuffer						# Asigno la nueva direccion de memoria, que se encuentra almacenada en v0, a obuffer.
 	
 	# obuffer == NULL ?
@@ -883,7 +1066,7 @@ $InitializeNewOBuffer:
 	la			t9,initializeBuffer			# Cargo en t9 la direccion de memoria de la funcion initializeBuffer.
 	jal			ra,t9							# Ejecuto la funcion initializeBuffer.
 	
-	b			$FreeLexico						# Salto incondicional a FreeLexico.
+	b			$myfreeLexico						# Salto incondicional a myfreeLexico.
 $LoadLexicoInOBuffer:
 	# (*amountSavedInOBuffer) > 0 ?
 	lw			v0,84($fp)						# Cargo en v0 lo guardado en la direccion de memoria 84($fp), que representaria a la variable *amountSavedInOBuffer.
@@ -919,7 +1102,7 @@ $ForLexicoInOBufferNotWriteFile:
 	lw			v1,quantityCharacterInLexico	# Cargo en v1 quantityCharacterInLexico.
 	slt			v0,v0,v1						# Guado en v0 TRUE si el indice i es menor que quantityCharacterInLexico. Caso contrario guardo FALSE
 	bne			v0,FALSE,$GoInForLexicoInOBufferNotWriteFile # Si (i < quantityCharacterInLexico) goto GoInForLexicoInOBufferNotWriteFile.
-	b			$FreeLexico
+	b			$myfreeLexico
 $GoInForLexicoInOBufferNotWriteFile:
 	# obuffer[*amountSavedInOBuffer] = lexico[i];
 	lw			v0,84($fp)						# Cargo en v0 lo guardado en la direccion de memoria 84($fp), que representaria a la variable *amountSavedInOBuffer.
@@ -944,10 +1127,10 @@ $GoInForLexicoInOBufferNotWriteFile:
 	addu		v0,v0,1						# Incremento el indice.
 	sw			v0,56($fp)						# Guardo nuevo valor del indice.
 	b			$ForLexicoInOBufferNotWriteFile # Salto al principio del for para intentar entrar nuevamente al loop.
-$FreeLexico:
+$myfreeLexico:
 	lw			a0,lexico						# Cargo en a0 lexico.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree
 	sw			zero,lexico					# Asigno NULL a lexico.
 	sw			zero,quantityCharacterInLexico # Dejo quantityCharacterInLexico en 0.
 $VerifyLoadIBuffer:
@@ -982,7 +1165,6 @@ $ReturnExecutePalindromeWrite:
 	addu		sp,sp,80
 	j			ra								# Jump and return
 	.end		executePalindromeWrite
-	.size		executePalindromeWrite, .-executePalindromeWrite
 
 
 ##-----	palindrome -----##
@@ -991,7 +1173,7 @@ $ReturnExecutePalindromeWrite:
 	.globl		palindrome
 	.ent		palindrome
 palindrome:
-	.frame		$fp,80,ra		# vars= 40, regs= 3/0, args= 16, extra= 8	
+	.frame		$fp,80,ra
 	.set		noreorder
 	.cpload		t9
 	.set		reorder
@@ -1023,15 +1205,15 @@ palindrome:
 	lw			v0,88($fp)						# Cargo en v0 ofd, guardado en 88($fp).
 	sw			v0,oFileDescriptor				# Guardo en oFileDescriptor ofd.
 	
-	# char * ibuffer = (char *) malloc(ibytes*sizeof(char));
-	lw			a0,84($fp)						# Cargo en a0 ibytes, guardado en 84($fp). Parametro de la funcion malloc.
-	la			t9,malloc						# Cargo en t9 la direccion de la funcion malloc.
-	jal			ra,t9							# Ejecuto la funcion malloc.
-	sw			v0,24($fp)						# En v0 esta el resultado de malloc. Guardo esto en la direccion 24($fp) que representaria la variable * ibuffer.
+	# char * ibuffer = (char *) mymalloc(ibytes*sizeof(char));
+	lw			a0,84($fp)						# Cargo en a0 ibytes, guardado en 84($fp). Parametro de la funcion mymalloc.
+	la			t9,mymalloc						# Cargo en t9 la direccion de la funcion mymalloc.
+	jal			ra,t9							# Ejecuto la funcion mymalloc.
+	sw			v0,24($fp)						# En v0 esta el resultado de mymalloc. Guardo esto en la direccion 24($fp) que representaria la variable * ibuffer.
 	
 	# ibuffer == NULL ?
 	lw			v0,24($fp)						# Cargo en v0 *ibuffer, guardado en la direccion 24($fp).
-	bne			v0,DIR_NULL,$OBufferMalloc		# If (ibuffer != NULL) goto OBufferMalloc
+	bne			v0,DIR_NULL,$OBuffermymalloc		# If (ibuffer != NULL) goto OBuffermymalloc
 	
 	# ibuffer is NULL => Mensaje de error
 	li			a0,FILE_DESCRIPTOR_STDERR		# Cargo en a0 FILE_DESCRIPTOR_STDERR.
@@ -1043,12 +1225,12 @@ palindrome:
 	li			v0,ERROR_MEMORY				# Cargo en v0 el codigo de error.	
 	sw			v0,60($fp)						# Guardo el codigo de error (en v0) en la direccion de memoria 60($fp).
 	b			$ReturnPalindrome				# Salto incondicional al return de la funcion (goto ReturnPalindrome).
-$OBufferMalloc:
-	# obuffer = (char *) malloc(obytes*sizeof(char));
-	lw			a0,92($fp)						# Cargo en a0 obytes. Parametro de la funcion malloc.
-	la			t9,malloc						# Cargo en t9 la direccion de la funcion malloc.
-	jal			ra,t9							# Ejecuto la funcion malloc.
-	sw			v0,obuffer						# En v0 esta el resultado de malloc. Guardo esto en obuffer.
+$OBuffermymalloc:
+	# obuffer = (char *) mymalloc(obytes*sizeof(char));
+	lw			a0,92($fp)						# Cargo en a0 obytes. Parametro de la funcion mymalloc.
+	la			t9,mymalloc						# Cargo en t9 la direccion de la funcion mymalloc.
+	jal			ra,t9							# Ejecuto la funcion mymalloc.
+	sw			v0,obuffer						# En v0 esta el resultado de mymalloc. Guardo esto en obuffer.
 	
 	# obuffer == NULL ?
 	lw			v0,obuffer						# Cargo en v0 obuffer.
@@ -1061,10 +1243,10 @@ $OBufferMalloc:
 	li			v0, SYS_write
 	syscall						# No controlo error porque sale de por si de la funcion por error.
 	
-	# free(ibuffer)
-	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(ibuffer)
+	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,24($fp)				# Asigno NULL a ibuffer.
 	
 	li			v0,ERROR_MEMORY				# Cargo en v0 el codigo de error.	
@@ -1083,11 +1265,11 @@ $InitializeBuffers:
 	la			t9,initializeBuffer			# Cargo en t9 la direccion de la funcion initializeBuffer.
 	jal			ra,t9							# Ejecuto la funcion initializeBuffer.
 	
-	# int * amountSavedInOBuffer = (int *) malloc(sizeof(int));
+	# int * amountSavedInOBuffer = (int *) mymalloc(sizeof(int));
 	li			a0,4							# Cargo en a0 la cantidad de bytes a asignar (por ser un int, son 4 bytes).
-	la			t9,malloc						# Cargo en t9 la direccion de la funcion malloc.
-	jal			ra,t9							# Ejecuto la funcion malloc.
-	sw			v0,28($fp)						# En v0 esta el resultado de malloc. Asigno este resultado a la direccion 28($fp), que representaria a la variable * amountSavedInOBuffer.
+	la			t9,mymalloc						# Cargo en t9 la direccion de la funcion mymalloc.
+	jal			ra,t9							# Ejecuto la funcion mymalloc.
+	sw			v0,28($fp)						# En v0 esta el resultado de mymalloc. Asigno este resultado a la direccion 28($fp), que representaria a la variable * amountSavedInOBuffer.
 	
 	# amountSavedInOBuffer == NULL ?
 	lw			v0,28($fp)						# Cargo en v0 amountSavedInOBuffer
@@ -1100,16 +1282,16 @@ $InitializeBuffers:
 	li			v0, SYS_write
 	syscall						# No controlo error porque sale de por si de la funcion por error.
 	
-	# free(ibuffer)
-	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(ibuffer)
+	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,24($fp)				# Asigno NULL a ibuffer.
 	
-	# free(obuffer)
-	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(obuffer)
+	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,obuffer				# Asigno NULL a obuffer.
 	
 	li			v0,ERROR_MEMORY				# Cargo en v0 el codigo de error.	
@@ -1131,13 +1313,13 @@ $ContinueProcessToLoadIBuffer:
 $WhilePalindrome:
 	# end == FALSE ?
 	lw			v0,36($fp)						# Cargo en v0 end.
-	bne			v0,FALSE,$FreeBuffers			# If (end != FALSE) goto FreeBuffers.
+	bne			v0,FALSE,$myfreeBuffers			# If (end != FALSE) goto myfreeBuffers.
 	
 #	# end is FALSE
 	
 #	# error == FALSE ?
 	lw			v0,40($fp)						# Cargo en v0 end.
-	bne			v0,FALSE,$FreeBuffers			# If (error != FALSE) goto FreeBuffers.
+	bne			v0,FALSE,$myfreeBuffers			# If (error != FALSE) goto myfreeBuffers.
 	
 #	#  error is FALSE
 	
@@ -1188,22 +1370,22 @@ $WhileLoadIBuffer:
 	li			v0, SYS_write
 	syscall						# No controlo error porque sale de por si de la funcion por error.
 	
-	# free(ibuffer)	
-	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(ibuffer)	
+	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,24($fp)				# Asigno NULL a ibuffer.
 	
-	# free(obuffer)
-	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(obuffer)
+	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,obuffer				# Asigno NULL a obuffer.
 	
-	# free(amountSavedInOBuffer)
-	lw			a0,28($fp)						# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(amountSavedInOBuffer)
+	lw			a0,28($fp)						# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,28($fp)				# Asigno NULL a amountSavedInOBuffer.
 	
 	# lexico != NULL ?
@@ -1211,9 +1393,9 @@ $WhileLoadIBuffer:
 	beq			v0,DIR_NULL,$ReturnErrorRead	# If (lexico == NULL) goto ReturnErrorRead.
 	
 	# lexico is not NULL
-	lw			a0,lexico						# Cargo en a0 lexico. Parametro de la funcion free.
-	la			t9,free						# Cargo la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	lw			a0,lexico						# Cargo en a0 lexico. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,lexico					# Asigno NULL a lexico.
 $ReturnErrorRead:
 	li			v0,ERROR_READ					# Cargo en v0 el codigo de ERROR_READ.
@@ -1310,20 +1492,20 @@ $LoadErrorOfExecutePalinWrite:
 	sw			v0,32($fp)						# Asigno a la variable rdoProcess resultProcessWrite.
 	
 	b			$WhilePalindrome				# Vuelvo a intentar entrar al loop.
-$FreeBuffers:
+$myfreeBuffers:
 	# (ibuffer != NULL) ?
 	lw			v0,24($fp)						# Cargo en v0 ibuffer.
-	beq			v0,DIR_NULL,$FreeOBufferInPalindrome # If (ibuffer == NULL) goto FreeOBufferInPalindrome
+	beq			v0,DIR_NULL,$myfreeOBufferInPalindrome # If (ibuffer == NULL) goto myfreeOBufferInPalindrome
 	
 	# ibuffer es not NULL
-	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	lw			a0,24($fp)						# Cargo en a0 ibuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,24($fp)				# Asigno a ibuffer NULL.
-$FreeOBufferInPalindrome:
+$myfreeOBufferInPalindrome:
 	# (obuffer != NULL) ?
 	lw			v0,obuffer						# Cargo en v0 obuffer.
-	beq			v0,DIR_NULL,$FreeLexicoInPalindrome # If (obuffer == NULL) goto FreeLexicoInPalindrome.
+	beq			v0,DIR_NULL,$myfreeLexicoInPalindrome # If (obuffer == NULL) goto myfreeLexicoInPalindrome.
 	
 	# obuffer is not NULL
 	
@@ -1331,14 +1513,14 @@ $FreeOBufferInPalindrome:
 	
 	# (amountSavedInOBuffer != NULL) ?
 	lw			v0,28($fp)						# Cargo en v0 amountSavedInOBuffer.
-	beq			v0,DIR_NULL,$FreeLexicoPalin	# If (amountSavedInOBuffer == NULL) goto FreeLexicoPalin.
+	beq			v0,DIR_NULL,$myfreeLexicoPalin	# If (amountSavedInOBuffer == NULL) goto myfreeLexicoPalin.
 	
 	# amountSavedInOBuffer is not NULL
 	
 	# ((*amountSavedInOBuffer) > 0) ?
 	lw			v0,28($fp)						# Cargo en v0 amountSavedInOBuffer.
 	lw			v0,0(v0)						# Cargo el contenido de lo apuntado por amountSavedInOBuffer en v0.
-	blez		v0,$FreeLexicoPalin			# If ((* amountSavedInOBuffer) <= 0) goto FreeLexicoPalin.
+	blez		v0,$myfreeLexicoPalin			# If ((* amountSavedInOBuffer) <= 0) goto myfreeLexicoPalin.
 	
 	# (*amountSavedInOBuffer) is greater then 0
 	
@@ -1350,40 +1532,40 @@ $FreeOBufferInPalindrome:
 	
 	# (rdoWrite != OKEY) ?
 	lw			v0,56($fp)						# Cargo en v0 rdoWrite.
-	beq			v0,OKEY,$FreeLexicoPalin		# If (rdoWrite == OKEY) goto FreeLexicoPalin.
+	beq			v0,OKEY,$myfreeLexicoPalin		# If (rdoWrite == OKEY) goto myfreeLexicoPalin.
 	
 	# rdoWrite is OKEY.
 	
 	# rdoProcess = rdoWrite;
 	lw			v0,56($fp)						# Cargo en v0 rdoWrite.
 	sw			v0,32($fp)						# Asigno a la variable rdoProcess rdoWrite.
-$FreeLexicoPalin:
-	# free(obuffer);
-	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+$myfreeLexicoPalin:
+	# myfree(obuffer);
+	lw			a0,obuffer						# Cargo en a0 obuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,obuffer				# Asigno NULL a obuffer.
-$FreeLexicoInPalindrome:
+$myfreeLexicoInPalindrome:
 	# (lexico != NULL) ?
 	lw			v0,lexico						# Cargo en v0 lexico.
-	beq			v0,DIR_NULL,$FreeAmountSavedInOBuffer # If (lexico == NULL) goto FreeAmountSavedInOBuffer.
+	beq			v0,DIR_NULL,$myfreeAmountSavedInOBuffer # If (lexico == NULL) goto myfreeAmountSavedInOBuffer.
 	
 	# lexico is not NULL
-	lw			a0,lexico						# Cargo en a0 lexico. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	lw			a0,lexico						# Cargo en a0 lexico. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,lexico					# Asigno NULL a lexico.
-$FreeAmountSavedInOBuffer:
+$myfreeAmountSavedInOBuffer:
 	# (amountSavedInOBuffer != NULL) ?
 	lw			v0,28($fp)						# Cargo en v0 amountSavedInOBuffer.
 	beq			v0,DIR_NULL,$LoadReturnPalindrome # If (amountSavedInOBuffer == NULL) goto LoadReturnPalindrome.
 	
 	# amountSavedInOBuffer is not NULL
 	
-	# free(amountSavedInOBuffer);
-	lw			a0,28($fp)						# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion free.
-	la			t9,free						# Cargo en t9 la direccion de la funcion free.
-	jal			ra,t9							# Ejecuto la funcion free.
+	# myfree(amountSavedInOBuffer);
+	lw			a0,28($fp)						# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion myfree.
+	la			t9,myfree						# Cargo en t9 la direccion de la funcion myfree.
+	jal			ra,t9							# Ejecuto la funcion myfree.
 	sw			zero,28($fp)					# Asigno NULL a amountSavedInOBuffer.
 $LoadReturnPalindrome:
 	lw			v0,32($fp)						# Cargo en v0 rdoProcess.
@@ -1396,9 +1578,7 @@ $ReturnPalindrome:
 	addu		sp,sp,80
 	j			ra								# Jump and return
 	.end	palindrome
-	.size	palindrome, .-palindrome
-		
-		
+
 
 ## Variables auxiliares
 
@@ -1420,7 +1600,7 @@ doubleWord:
 	.word	1073741824
 	
 	.globl		lexico
-	.section	.bss		# TODO VER SI ESTO VA
+	.section	.bss
 	.align	2
 	.type	lexico, @object
 	.size	lexico, 4
