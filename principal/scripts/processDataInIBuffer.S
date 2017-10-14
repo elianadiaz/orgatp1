@@ -47,7 +47,7 @@ processDataInIBuffer:
 	sw		zero,28($fp)			# Guardo en la direccion de memoria 28($fp) el valor FALSE (que seria 0), representa la variable 
 							# loadIBuffer (int loadIBuffer = FALSE).
 	sw		zero,32($fp)			# Guardo en la direccion de memoria 32($fp) el valor 0, representa la variable idx (int idx = 0).
-	sw		zero,36($fp)			# Guardo en la direccion de memoria 36($fp) el valor OKEY (que seria 0), representa la variable rdo (int rdo = FALSE).
+	sw		zero,36($fp)			# Guardo en la direccion de memoria 36($fp) el valor OKEY (que seria 0), representa la variable rdo (int rdo = OKEY).
 $WhileProcessDataInIBuffer:
 	# findEnd == FALSE ?
 	lw		v0,24($fp)			# Cargo en v0 el contenido de la direccion de memoria 24($fp), que seria la variable findEnd.
