@@ -38,23 +38,23 @@ loadInLexico:
 	move		v0,a0
 
 	# Parameter
-	sb		v0,24($fp)				# Guardo en la direccion de memoria 24($fp) la variable character (char character).
-	lw		v0,lexico				# Cargo en v0 la variable lexico.
+	sb		v0,24($fp)  # Guardo en la direccion de memoria 24($fp) la variable character (char character).
+	lw		v0,lexico  # Cargo en v0 la variable lexico.
 	bne		v0,zero,$VerifyIfReallocLexico
 	li		a0,LEXICO_BUFFER_SIZE			
 	la		t9,mymalloc
 	jal		ra,t9
 	sw		v0,lexico
 	li		v0,LEXICO_BUFFER_SIZE
-	sw		v0,bytesLexico				# Guardo LEXICO_BUFFER_SIZE en la variable bytesLexico.
+	sw		v0,bytesLexico  # Guardo LEXICO_BUFFER_SIZE en la variable bytesLexico.
 	b		$VerifyIfCanLoadInLexico
 $VerifyIfReallocLexico:
 	# (quantityCharacterInLexico >= bytesLexico) ?
 	lw		v0,quantityCharacterInLexico
 	lw		v1,bytesLexico
-	slt		v0,v0,v1				# Guarda en v0 TRUE si quantityCharacterInLexico < bytesLexico, sino guarda FALSE
+	slt		v0,v0,v1  # Guarda en v0 TRUE si quantityCharacterInLexico < bytesLexico, sino guarda FALSE
 	bne		v0,zero,$VerifyIfCanLoadInLexico	# If (quantityCharacterInLexico < bytesLexico) goto VerifyIfCanLoadInLexico.
-								# Se va por el negativo para no tener que alocar memoria para guardar TRUE.
+    # Se va por el negativo para no tener que alocar memoria para guardar TRUE.
 
 	# quantityCharacterInLexico >= bytesLexico
 
@@ -81,27 +81,27 @@ $VerifyIfCanLoadInLexico:
 	la		a1,MENSAJE_ERROR_MEMORIA_LEXICO 	# Cargo en a1 la direccion de memoria donde se encuentra el mensaje a cargar.
 	li		a2,BYTES_MENSAJE_ERROR_MEMORIA_LEXICO	# Cargo en a2 la cantidad de bytes a escribir.
 	li		v0, SYS_write
-	syscall						# No controlo error porque sale de por si de la funcion por error.
+	syscall  		# No controlo error porque sale de por si de la funcion por error.
 
 	li		v0,ERROR_MEMORY
-	sw		v0,32($fp)				# Guardo el codigo de error (en v0) en la direccion de memoria 32($fp).
+	sw		v0,32($fp)  # Guardo el codigo de error (en v0) en la direccion de memoria 32($fp).
 	b		$ReturnLoadInLexico			# Salto incondicional al return de la funcion (goto ReturnLoadInLexico).
 $LoadCharacterInLexico:
 	# lexico[quantityCharacterInLexico] = character;
 	lw		v1,lexico
 	lw		v0,quantityCharacterInLexico
-	addu		v1,v1,v0				# Me corro en la memoria de lexico para guardar nuevo dato, guardo el dato en v1: 
-								# lexico + quantityCharacterInLexico = lexico[quantityCharacterInLexico]
-	lbu		v0,24($fp)				# Cargo en v0 el caracter a guardar (variable character).
-	sb		v0,0(v1)				# Guardo en la direccion apuntada por v1 el caracter guardado en v0.
+	addu		v1,v1,v0  # Me corro en la memoria de lexico para guardar nuevo dato, guardo el dato en v1: 
+    # lexico + quantityCharacterInLexico = lexico[quantityCharacterInLexico]
+	lbu		v0,24($fp)  # Cargo en v0 el caracter a guardar (variable character).
+	sb		v0,0(v1)  # Guardo en la direccion apuntada por v1 el caracter guardado en v0.
 
 	# quantityCharacterInLexico ++;
 	lw		v0,quantityCharacterInLexico		
-	addu		v0,v0,1					# Incremento en 1 el valor de quantityCharacterInLexico.
+	addu		v0,v0,1  	# Incremento en 1 el valor de quantityCharacterInLexico.
 	sw		v0,quantityCharacterInLexico		
 
 	# return OKEY;
-	sw		zero,32($fp)				# Guardo OKEY (= 0) en la direccion de memoria 32($fp).
+	sw		zero,32($fp)  # Guardo OKEY (= 0) en la direccion de memoria 32($fp).
 $ReturnLoadInLexico:
 	lw		v0,32($fp)
 	move		sp,$fp
@@ -119,6 +119,3 @@ $ReturnLoadInLexico:
 	.align	2
 MENSAJE_ERROR_MEMORIA_LEXICO:
 	.ascii	"[Error] Hubo un error en memoria (lexico). \n\000"
-
-
-

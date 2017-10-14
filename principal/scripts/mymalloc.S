@@ -131,5 +131,3 @@ mymalloc_return:
 
 	j		ra
 	.end	mymalloc
-
-

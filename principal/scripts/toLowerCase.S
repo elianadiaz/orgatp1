@@ -19,16 +19,16 @@ toLowerCase:
 	sw		gp,16(sp)
 	move		$fp,sp
 	
-	move		v0,a0					# word (this is the character)
+	move		v0,a0  # word (this is the character)
 	sb		v0,8($fp)
 	lb		v0,8($fp)
 	slt		v0,v0,65
-	bne		v0,zero,$IfNotLower			# if !(word >= 65) goto IfNotLower 
+	bne		v0,zero,$IfNotLower  # if !(word >= 65) goto IfNotLower 
 	lb		v0,8($fp)
 	slt		v0,v0,91
-	beq		v0,zero,$IfNotLower			# if !(word <= 90) goto IfNotLower 
+	beq		v0,zero,$IfNotLower  # if !(word <= 90) goto IfNotLower 
 	lbu		v0,8($fp)
-	addu		v0,v0,32				# word += 32
+	addu		v0,v0,32  # word += 32
 	sb		v0,8($fp)
 $IfNotLower:
 	lb		v0,8($fp)
@@ -37,7 +37,5 @@ $IfNotLower:
 	#Stack frame destruction.
 	lw		$fp,20(sp)
 	addu		sp,sp,24
-	j		ra					# Jump and return
+	j		ra  # Jump and return
 	.end		toLowerCase
-
-

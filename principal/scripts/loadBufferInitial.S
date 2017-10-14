@@ -30,13 +30,13 @@ loadBufferInitial:
 	move		$fp,sp
 
 	# Parameters
-	sw		a0,48($fp)				# Guardo en la direccion de memoria 48($fp) la variable size (size_t size).
-	sw		a1,52($fp)				# Guardo en la direccion de memoria 52($fp) la variable * buffer (char * buffer).
+	sw		a0,48($fp)  # Guardo en la direccion de memoria 48($fp) la variable size (size_t size).
+	sw		a1,52($fp)  # Guardo en la direccion de memoria 52($fp) la variable * buffer (char * buffer).
 
-	lw		a0,48($fp)				# Cargo en a0 la variable size, parametro de mymalloc.
+	lw		a0,48($fp)  # Cargo en a0 la variable size, parametro de mymalloc.
 	la		t9,mymalloc
-	jal		ra,t9					# Ejecuto mymalloc.
-	sw		v0,52($fp)				# Asigno la memoria reservada con mymalloc a buffer.
+	jal		ra,t9  	# Ejecuto mymalloc.
+	sw		v0,52($fp)  # Asigno la memoria reservada con mymalloc a buffer.
 
 	lw		v0,52($fp)
 	bne		v0,zero,$InitializeMemory		# If (buffer != NULL) goto InitializeMemory.
@@ -46,17 +46,17 @@ loadBufferInitial:
 	la		a1,MENSAJE_ERROR_MEMORIA_BUFFER 	# Cargo en a1 la direccion de memoria donde se encuentra el mensaje a cargar.
 	li		a2,BYTES_MENSAJE_ERROR_MEMORIA_BUFFER	# Cargo en a2 la cantidad de bytes a escribir.
 	li		v0, SYS_write
-	syscall						# No controlo error porque sale de por si de la funcion con null y se controla error luego.
+	syscall  		# No controlo error porque sale de por si de la funcion con null y se controla error luego.
 	
-	sw		zero,24($fp)				# Guardo NULL en la direccion de memoria 24($fp).
+	sw		zero,24($fp)  # Guardo NULL en la direccion de memoria 24($fp).
 	b		$ReturnLoadBufferInitial		# Salto al return de la funcion.
 $InitializeMemory:
-	lw		a0,48($fp)				# Cargo en a0 la variable size. Parametro de la funcion initializeBuffer.
-	lw		a1,52($fp)				# Cargo en a0 la variable buffer. Parametro de la funcion initializeBuffer.
+	lw		a0,48($fp)  # Cargo en a0 la variable size. Parametro de la funcion initializeBuffer.
+	lw		a1,52($fp)  # Cargo en a0 la variable buffer. Parametro de la funcion initializeBuffer.
 	la		t9,initializeBuffer
-	jal		ra,t9					# Ejecuto la funcion initializeBuffer.
-	lw		v0,52($fp)				# Cargo en v0 la variable buffer.
-	sw		v0,24($fp)				# Guardo buffer en la direccion de memoria 24($fp).
+	jal		ra,t9  	# Ejecuto la funcion initializeBuffer.
+	lw		v0,52($fp)  # Cargo en v0 la variable buffer.
+	sw		v0,24($fp)  # Guardo buffer en la direccion de memoria 24($fp).
 $ReturnLoadBufferInitial:
 	lw		v0,24($fp)
 	move		sp,$fp
