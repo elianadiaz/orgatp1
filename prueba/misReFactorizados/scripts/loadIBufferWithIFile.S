@@ -73,12 +73,14 @@ $WhileLoadIBuffer:
 	syscall						# Seria read: int bytesRead = read(ifd, ibuffer + bytesReadAcum, bytesToRead);
 	
 	# Controlo errores y cantidad de bytes leidos. v0 contiene el numero de caracteres leidos (es negativo si hubo error y es 0 si llego a fin del archivo).
+	
+	beq 		a3,zero,$SavedBytesRead 		#Si a3 es cero, no hubo error 
 
-	sw		v0,40($fp)			# Guardo en la direccion de memoria 40($fd) el resultado de la funcion read, que 
-							# estaria representado por la variable bytesRead.
+	sw		v0,40($fp)				# Guardo en la direccion de memoria 40($fd) el resultado de la funcion read, que 
+								# estaria representado por la variable bytesRead.
 	
 	# bytesRead == -1 ?
-	lw		v1,40($fp)			# Cargo en v1 bytesRead.
+	lw		v1,40($fp)				# Cargo en v1 bytesRead.
 	li		v0,-1					# Cargo en v0 -1 para la comparacion.
 	bne		v1,v0,$ContinueValidationResultRead 	# If (bytesRead != -1) goto ContinueValidationResultRead.
 	
@@ -92,6 +94,9 @@ $WhileLoadIBuffer:
 	li		v0,ERROR_I_READ
 	sw		v0,44($fp)			# Guardo el codigo de error en la direccion 44($fp).
 	b		$ReturnLoadIBufferWithIFile 	# Salto incondicional al return de la funcion.
+$SavedBytesRead:
+	sw		v0,40($fp)				# Guardo en la direccion de memoria 40($fd) el resultado de la funcion read, que 
+								# estaria representado por la variable bytesRead.
 $ContinueValidationResultRead:
 	lw		v0,40($fp)			# Cargo en v1 bytesRead.
 	bne		v0,zero,$ContinueAccumulatingBytesRead 	# If (bytesRead != 0) goto ContinueAccumulatingBytesRead
@@ -111,7 +116,7 @@ $ContinueAccumulatingBytesRead:
 	sw		v0,32($fp)				# Asigno a bytesToRead el resultado de la resta.
 
 	# bytesToRead == 0 ?
-	lw		v0,52($fp)				# Cargo en v0 bytesToRead.
+	lw		v0,32($fp)				# Cargo en v0 bytesToRead.
 	bne		v0,zero,$WhileLoadIBuffer		# If (bytesToRead != 0) goto WhileLoadIBuffer
 
 	# bytesToRead is 0.

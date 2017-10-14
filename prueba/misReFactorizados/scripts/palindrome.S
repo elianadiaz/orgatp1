@@ -14,6 +14,7 @@
 #define ERROR_READ		3
 #define	ERROR_WRITE		4
 #define LOAD_I_BUFFER		5
+#define OKEY_I_FILE			-4
 
 # Size mensajes
 #define BYTES_MENSAJE_ERROR_MEMORIA_OBUFFER	60
@@ -90,7 +91,7 @@ $LoadOBuffer:
 	
 	# free(ibuffer); ibuffer = NULL;
 	lw		a0,ibuffer
-	la		t9,free
+	la		t9,myfree
 	jal		ra,t9
 	sw		zero,ibuffer
 
@@ -98,15 +99,15 @@ $LoadOBuffer:
 	sw		v0,44($fp)				# Guardo el codigo de error en la direccion 44($fp).
 	b		$ReturnPalindrome			# Salto incondicional al return de la funcion.
 $LoadAmountSavedInOBuffer:
-	li	a0,4					# Cargo en a0 la cantidad de bytes a asignar (por ser un int, son 4 bytes).
-	la	t9,mymalloc
-	jal	ra,t9
-	sw	v0,24($fp)				# En v0 esta el resultado de mymalloc. Asigno este resultado a la direccion 
-							# 24($fp), que representaria a la variable * amountSavedInOBuffer.
+	li		a0,4					# Cargo en a0 la cantidad de bytes a asignar (por ser un int, son 4 bytes).
+	la		t9,mymalloc
+	jal		ra,t9
+	sw		v0,24($fp)				# En v0 esta el resultado de mymalloc. Asigno este resultado a la direccion 
+								# 24($fp), que representaria a la variable * amountSavedInOBuffer.
 
 	# amountSavedInOBuffer == NULL ?
-	lw	v0,24($fp)
-	bne	v0,DIR_NULL,$ContinueProcessToLoadIBuffer # If (amountSavedInOBuffer != NULL) goto ContinueProcessToLoadIBuffer
+	lw		v0,24($fp)
+	bne		v0,DIR_NULL,$ContinueProcessToLoadIBuffer # If (amountSavedInOBuffer != NULL) goto ContinueProcessToLoadIBuffer
 
 	# amountSavedInOBuffer is NULL => Mensaje de error
 	li		a0,FILE_DESCRIPTOR_STDERR		# Cargo en a0 FILE_DESCRIPTOR_STDERR.
@@ -116,10 +117,10 @@ $LoadAmountSavedInOBuffer:
 	syscall						# No controlo error porque sale de por si de la funcion por error.
 	
 	# myfree(ibuffer)
-	lw		a0,24($fp)				# Cargo en a0 ibuffer. Parametro de la funcion myfree.
+	lw		a0,ibuffer				# Cargo en a0 ibuffer. Parametro de la funcion myfree.
 	la		t9,myfree				# Cargo en t9 la direccion de la funcion myfree.
 	jal		ra,t9					# Ejecuto la funcion myfree.
-	sw		zero,24($fp)				# Asigno NULL a ibuffer.
+	sw		zero,ibuffer				# Asigno NULL a ibuffer.
 	
 	# myfree(obuffer)
 	lw		a0,obuffer				# Cargo en a0 obuffer. Parametro de la funcion myfree.
@@ -132,127 +133,126 @@ $LoadAmountSavedInOBuffer:
 	b		$ReturnPalindrome
 $ContinueProcessToLoadIBuffer:
 	# amountSavedInOBuffer[0] = 0;
-	lw	v0,24($fp)
-	sw	zero,0(v0)
+	lw		v0,24($fp)
+	sw		zero,0(v0)
 
 	# int rdoProcess = OKEY;
-	sw	zero,28($fp)
+	sw		zero,28($fp)
 
 	# int error = FALSE;
-	sw	zero,32($fp)
+	sw		zero,32($fp)
 
 	# int rdoLoadIBuffer = OKEY_I_FILE;
-	li	v0,OKEY_I_FILE
-	sw	v0,36($fp)
+	li		v0,OKEY_I_FILE
+	sw		v0,36($fp)
 $WhilePalindrome:
 	# (rdoLoadIBuffer == OKEY_I_FILE) ?
-	lw	v1,36($fp)
-	li	v0,OKEY_I_FILE
-	bne	v1,v0,$CleanBuffersSincePalindrome	# If (rdoLoadIBuffer != OKEY_I_FILE) goto CleanBuffersSincePalindrome
+	lw		v1,36($fp)
+	li		v0,OKEY_I_FILE
+	bne		v1,v0,$CleanBuffersSincePalindrome	# If (rdoLoadIBuffer != OKEY_I_FILE) goto CleanBuffersSincePalindrome
 
 	# (error == FALSE) ?
-	lw	v0,32($fp)
-	bne	v0,FALSE,$CleanBuffersSincePalindrome	# If (error != FALSE) goto CleanBuffersSincePalindrome
+	lw		v0,32($fp)
+	bne		v0,FALSE,$CleanBuffersSincePalindrome	# If (error != FALSE) goto CleanBuffersSincePalindrome
 
 	# rdoLoadIBuffer = loadIBufferWithIFile(ibytes, ifd);
-	lw	a0,68($fp)
-	lw	a1,64($fp)
-	la	t9,loadIBufferWithIFile
-	jal	ra,t9
-	sw	v0,36($fp)			# Cargo en la direccion 36($fp) el resultado de la funcion loadIBufferWithIFile, 
+	lw		a0,68($fp)
+	lw		a1,64($fp)
+	la		t9,loadIBufferWithIFile
+	jal		ra,t9
+	sw		v0,36($fp)				# Cargo en la direccion 36($fp) el resultado de la funcion loadIBufferWithIFile, 
 						# que representaria a la variable rdoLoadIBuffer.
 	
 	# (ibuffer != NULL && ibuffer[0] != '\0') ?
 
 	# (ibuffer != NULL) ?
-	lw	v0,ibuffer
-	beq	v0,DIR_NULL,$WhilePalindrome	# If (ibuffer == NULL) goto WhilePalindrome
+	lw		v0,ibuffer
+	beq		v0,DIR_NULL,$WhilePalindrome		# If (ibuffer == NULL) goto WhilePalindrome
 
 	# (ibuffer[0] != '\0') ?
-	lw	v0,ibuffer
-	lb	v0,0(v0)
-	beq	v0,zero,$WhilePalindrome	# If (ibuffer[0] == '\0') goto WhilePalindrome
+	lw		v0,ibuffer
+	lb		v0,0(v0)
+	beq		v0,zero,$WhilePalindrome		# If (ibuffer[0] == '\0') goto WhilePalindrome
 
 	# int resultProcessWrite = processDataInIBuffer(ibuffer, amountSavedInOBuffer);
-	lw	a0,ibuffer
-	lw	a1,24($fp)
-	la	t9,processDataInIBuffer
-	jal	ra,t9
-	sw	v0,40($fp)			# En la direccion 40($fp) guarda el resultado de la funcion processDataInIBuffer, 
-						# que representa la variable resultProcessWrite.
+	lw		a0,ibuffer
+	lw		a1,24($fp)
+	la		t9,processDataInIBuffer
+	jal		ra,t9
+	sw		v0,40($fp)				# En la direccion 40($fp) guarda el resultado de la funcion processDataInIBuffer, 
+								# que representa la variable resultProcessWrite.
 
 	# (resultProcessWrite == LOAD_I_BUFFER) ?
-	lw	v1,40($fp)
-	li	v0,LOAD_I_BUFFER
-	bne	v1,v0,$ContinueValidationResultProcessDataInIBuffer  # If (resultProcessWrite != LOAD_I_BUFFER) goto ContinueValidationResultProcessDataInIBuffer.
+	lw		v1,40($fp)
+	li		v0,LOAD_I_BUFFER
+	bne		v1,v0,$ContinueValidationResultProcessDataInIBuffer  # If (resultProcessWrite != LOAD_I_BUFFER) goto ContinueValidationResultProcessDataInIBuffer.
 
 	# resultProcessWrite is equal LOAD_I_BUFFER
 	
 	# initializeBuffer(ibytes, ibuffer);
-	lw	a0,68($fp)
-	lw	a1,ibuffer
-	la	t9,initializeBuffer
-	jal	ra,t9			# Ejecuto la funcion initializeBuffer.
+	lw		a0,68($fp)
+	lw		a1,ibuffer
+	la		t9,initializeBuffer
+	jal		ra,t9					# Ejecuto la funcion initializeBuffer.
 $ContinueValidationResultProcessDataInIBuffer:
 	# (resultProcessWrite == ERROR_MEMORY || resultProcessWrite == ERROR_WRITE) ?
 	
 	# resultProcessWrite == ERROR_MEMORY ?
-	lw	v1,40($fp)			# Cargo en v1 resultProcessWrite.
-	li	v0,ERROR_MEMORY
-	beq	v1,v0,$LoadErrorOfExecutePalinWrite  	# If (resultProcessWrite == ERROR_MEMORY) goto LoadErrorOfExecutePalinWrite.
+	lw		v1,40($fp)				# Cargo en v1 resultProcessWrite.
+	li		v0,ERROR_MEMORY
+	beq		v1,v0,$LoadErrorOfExecutePalinWrite  	# If (resultProcessWrite == ERROR_MEMORY) goto LoadErrorOfExecutePalinWrite.
 
 	# resultProcessWrite is not equal ERROR_MEMORY
 	
 	# resultProcessWrite == ERROR_WRITE ?
-	lw	v1,40($fp)				# Cargo en v1 resultProcessWrite.
-	li	v0,ERROR_WRITE
-	beq	v1,v0,$LoadErrorOfExecutePalinWrite 	# If (resultProcessWrite == ERROR_WRITE) goto LoadErrorOfExecutePalinWrite.
+	lw		v1,40($fp)				# Cargo en v1 resultProcessWrite.
+	li		v0,ERROR_WRITE
+	beq		v1,v0,$LoadErrorOfExecutePalinWrite 	# If (resultProcessWrite == ERROR_WRITE) goto LoadErrorOfExecutePalinWrite.
 
 	# No hay errores
-	b	$WhilePalindrome
+	b		$WhilePalindrome
 $LoadErrorOfExecutePalinWrite:
-	li	v0,TRUE
-	sw	v0,32($fp)				# Asigno a la variable error TRUE.
+	li		v0,TRUE
+	sw		v0,32($fp)				# Asigno a la variable error TRUE.
 
 	# rdoProcess = resultProcessWrite;
-	lw	v0,40($fp)				# Cargo en v0 resultProcessWrite.
-	sw	v0,28($fp)				# Asigno a la variable rdoProcess resultProcessWrite.
+	lw		v0,40($fp)				# Cargo en v0 resultProcessWrite.
+	sw		v0,28($fp)				# Asigno a la variable rdoProcess resultProcessWrite.
 
-	b	$WhilePalindrome			# Vuelvo a intentar entrar al loop.
+	b		$WhilePalindrome			# Vuelvo a intentar entrar al loop.
 $CleanBuffersSincePalindrome:
 	# int rdoClean = cleanBuffers(amountSavedInOBuffer);
-	lw	a0,24($fp)				# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion cleanBuffers.
-	la	t9,cleanBuffers
-	jal	ra,t9					# Ejecuto la funcion cleanBuffers.
-	sw	v0,40($fp)				# Guardo en la direccion 40($fp) el resultado de ejecutar la funcion cleanBuffers. Seria rdoClean.
+	lw		a0,24($fp)				# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion cleanBuffers.
+	la		t9,cleanBuffers
+	jal		ra,t9					# Ejecuto la funcion cleanBuffers.
+	sw		v0,40($fp)				# Guardo en la direccion 40($fp) el resultado de ejecutar la funcion cleanBuffers. Seria rdoClean.
 
-	lw	v0,24($fp)				# Cargo en v0 amountSavedInOBuffer.
-	beq	v0,DIR_NULL,$VerifyResultClean		# if (amountSavedInOBuffer == NULL) goto VerifyResultClean.
+	lw		v0,24($fp)				# Cargo en v0 amountSavedInOBuffer.
+	beq		v0,DIR_NULL,$VerifyResultClean		# if (amountSavedInOBuffer == NULL) goto VerifyResultClean.
 
 	# free(amountSavedInOBuffer); amountSavedInOBuffer = NULL;
-	lw	a0,24($fp)
-	la	t9,myfree
-	jal	ra,t9
-	sw	zero,24($fp)
+	lw		a0,24($fp)
+	la		t9,myfree
+	jal		ra,t9
+	sw		zero,24($fp)
 $VerifyResultClean:
 	# (rdoClean != OKEY) ?
-	lw	v0,40($fp)			# Cargo en v0 rdoClean.
-	beq	v0,OKEY,$ReturnResultProcess	# if (rdoClean == OKEY) goto ReturnResultProcess
-	lw	v0,40($fp)
-	sw	v0,44($fp)			# Cargo en la direccion 44($fp) rdoClean
-	b	$ReturnPalindrome
+	lw		v0,40($fp)				# Cargo en v0 rdoClean.
+	beq		v0,OKEY,$ReturnResultProcess		# if (rdoClean == OKEY) goto ReturnResultProcess
+	lw		v0,40($fp)
+	sw		v0,44($fp)				# Cargo en la direccion 44($fp) rdoClean
+	b		$ReturnPalindrome
 $ReturnResultProcess:
-	lw	v0,28($fp)			
-	sw	v0,44($fp)			# Cargo en la direccion 44($fp) rdoProcess
+	lw		v0,28($fp)			
+	sw		v0,44($fp)				# Cargo en la direccion 44($fp) rdoProcess
 $ReturnPalindrome:
-	lw	v0,44($fp)
-	move	sp,$fp
-	lw	ra,56(sp)
-	lw	$fp,52(sp)
-	addu	sp,sp,64
-	j	ra
-	.end	palindrome
-	.size	palindrome, .-palindrome
+	lw		v0,44($fp)
+	move		sp,$fp
+	lw		ra,56(sp)
+	lw		$fp,52(sp)
+	addu		sp,sp,64
+	j		ra
+	.end		palindrome
 
 
 ## Variables auxiliares

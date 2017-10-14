@@ -41,8 +41,10 @@ processDataInIBuffer:
 	sw		a0,80($fp)			# Guardo en la direccion de memoria 80($fp) la variable * ibuffer (char * ibuffer).
 	sw		a1,84($fp)			# Guardo en la direccion de memoria 84($fp) la variable * amountSavedInOBuffer (int * amountSavedInOBuffer).
 	
-	sw		zero,24($fp)			# Guardo en la direccion de memoria 24($fp) el valor FALSE (que seria 0), representa la variable findEnd (int findEnd = FALSE).
-	sw		zero,28($fp)			# Guardo en la direccion de memoria 28($fp) el valor FALSE (que seria 0), representa la variable loadIBuffer (int loadIBuffer = FALSE).
+	sw		zero,24($fp)			# Guardo en la direccion de memoria 24($fp) el valor FALSE (que seria 0), representa la variable 
+							# findEnd (int findEnd = FALSE).
+	sw		zero,28($fp)			# Guardo en la direccion de memoria 28($fp) el valor FALSE (que seria 0), representa la variable 
+							# loadIBuffer (int loadIBuffer = FALSE).
 	sw		zero,32($fp)			# Guardo en la direccion de memoria 32($fp) el valor 0, representa la variable idx (int idx = 0).
 	sw		zero,36($fp)			# Guardo en la direccion de memoria 36($fp) el valor OKEY (que seria 0), representa la variable rdo (int rdo = FALSE).
 $WhileProcessDataInIBuffer:
@@ -59,7 +61,8 @@ $WhileProcessDataInIBuffer:
 	# char character = ibuffer[idx];
 	lw		v1,80($fp)			# Cargo en v1 lo guardado en la direccion de memoria 80($fp), que seria la variable ibuffer.
 	lw		v0,32($fp)			# Cargo en v0 lo guardado en la direccion de memoria 32($fp), que seria la variable idx.
-	addu		v0,v1,v0			# Me corro en la direccion de memoria: a la apuntada por v1 (ibuffer) me corro la cantidad de posiciones establecidas por idx.
+	addu		v0,v1,v0			# Me corro en la direccion de memoria: a la apuntada por v1 (ibuffer) me corro la cantidad 
+							# de posiciones establecidas por idx.
 	lbu		v0,0(v0)			# Cargo en v0 la direccion de memoria guardada en v0 (calculada en el paso anterior).
 	sb		v0,40($fp)			# Guardo en la direccion 40($fp) lo guardado en v0. Representaria la variable character.
 	
@@ -111,9 +114,10 @@ $VerifyQuantityCharacterInLexico:
 	jal		ra,t9				# Ejecuto la funcion verifyPalindromic.
 	sw		v0,44($fp)			# Guardo en la direccion de memoria 44($fp) el resultado de la funcion verifyPalindromic, que esta 
 							# almacenado en v0 y que representaria a la variable itsPalindromic.	
-	lw		v1,44($fp)			# Cargo en v1 lo que se encuentra en la direccion de memoria 44($fp) que seria el resultado de la funcion verifyPalindromic.
+	lw		v1,44($fp)			# Cargo en v1 lo que se encuentra en la direccion de memoria 44($fp) que seria el resultado 
+							# de la funcion verifyPalindromic.
 	li		v0,TRUE
-	bne		v1,v0,$myfreeLexico			# If (itsPalindromic != TRUE) goto myfreeLexico.
+	bne		v1,v0,$myfreeLexico		# If (itsPalindromic != TRUE) goto myfreeLexico.
 	
 	# itsPalindromic is TRUE
 	
@@ -122,7 +126,8 @@ $VerifyQuantityCharacterInLexico:
 	lw	v1,0(v0)				# Cargo lo almacenado en la direccion de memoria apuntada por *amountSavedInOBuffer en v1.
 	lw	v0,quantityCharacterInLexico		# Cargo en v0 quantityCharacterInLexico.
 	addu	v0,v1,v0				# Hago (*amountSavedInOBuffer) + quantityCharacterInLexico, y guardo el resultado en v0.
-	sw	v0,48($fp)				# Guardo el resultado de la suma (almacenado el v0) en la direccion de memoria 48($fp), que representaria a la variable amountToSaved.
+	sw	v0,48($fp)				# Guardo el resultado de la suma (almacenado el v0) en la direccion de memoria 48($fp), que 
+							# representaria a la variable amountToSaved.
 	
 	# (*amountSavedInOBuffer) > 0 ?
 	lw	v0,84($fp)				# Cargo en v0 lo almacenado en la direccion de memoria 84($fp), que seria la variable *amountSavedInOBuffer.
@@ -164,7 +169,7 @@ $ContinueVerificationAboutAmountToSaved:
 	
 	# (obuffer == NULL) ?
 	lw	v0,obuffer
-	bne	v0,DIR_NULL,$CopyLexicoInBuffer # If (obuffer != NULL) goto CopyLexicoInBuffer
+	bne	v0,DIR_NULL,$CopyLexicoInBuffer 	# If (obuffer != NULL) goto CopyLexicoInBuffer
 	
 	# obuffer is NULL => Mensaje error.
 	li		a0,FILE_DESCRIPTOR_STDERR		# Cargo en a0 FILE_DESCRIPTOR_STDERR.
@@ -173,9 +178,9 @@ $ContinueVerificationAboutAmountToSaved:
 	li		v0, SYS_write
 	syscall						# No controlo error porque sale de por si de la funcion por error.
 	
-	li	v0,ERROR_MEMORY
-	sw	v0,56($fp)
-	b	$ReturnProcessDataInIBuffer
+	li		v0,ERROR_MEMORY
+	sw		v0,56($fp)
+	b		$ReturnProcessDataInIBuffer
 $CopyLexicoInBuffer:
 	# copyFromLexicoToOBuffer(amountSavedInOBuffer);
 	lw	a0,84($fp)				# Cargo en a0 amountSavedInOBuffer. Parametro de la funcion copyFromLexicoToOBuffer.
@@ -233,7 +238,7 @@ $mymallocNewOBuffer:
 $LoadLexicoInOBuffer:
 	# (*amountSavedInOBuffer) > 0 ?
 	lw	a0,84($fp)				# Cargo en a0 lo guardado en la direccion de memoria 84($fp), que representaria a la variable *amountSavedInOBuffer.
-								# Parametro de la funcion copyFromLexicoToOBuffer.
+							# Parametro de la funcion copyFromLexicoToOBuffer.
 	la	t9,copyFromLexicoToOBuffer
 	jal	ra,t9					# Ejecuto la funcion copyFromLexicoToOBuffer.
 $myfreeLexico:

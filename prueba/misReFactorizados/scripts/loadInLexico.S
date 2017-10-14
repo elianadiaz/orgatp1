@@ -57,19 +57,21 @@ $VerifyIfReallocLexico:
 								# Se va por el negativo para no tener que alocar memoria para guardar TRUE.
 
 	# quantityCharacterInLexico >= bytesLexico
+
+	# bytesLexico += LEXICO_BUFFER_SIZE;
 	lw		v0,bytesLexico
 	sw		v0,28($fp)
 	lw		v0,bytesLexico
-	addu		v0,v0,10
+	addu		v0,v0,LEXICO_BUFFER_SIZE
 	sw		v0,bytesLexico
+
+	# lexico = myRealloc(lexico, bytesLexico*sizeof(char), bytesLexicoPreview);
 	lw		a0,lexico
 	lw		a1,bytesLexico
 	lw		a2,28($fp)
 	la		t9,myRealloc
 	jal		ra,t9
-	sw		v0,lexico
-	lw		v0,lexico
-	
+	sw		v0,lexico	
 $VerifyIfCanLoadInLexico:
 	lw		v0,lexico
 	bne		v0,zero,$LoadCharacterInLexico		# If (lexico != NULL) goto LoadCharacterInLexico.
@@ -85,15 +87,20 @@ $VerifyIfCanLoadInLexico:
 	sw		v0,32($fp)				# Guardo el codigo de error (en v0) en la direccion de memoria 32($fp).
 	b		$ReturnLoadInLexico			# Salto incondicional al return de la funcion (goto ReturnLoadInLexico).
 $LoadCharacterInLexico:
+	# lexico[quantityCharacterInLexico] = character;
 	lw		v1,lexico
 	lw		v0,quantityCharacterInLexico
 	addu		v1,v1,v0				# Me corro en la memoria de lexico para guardar nuevo dato, guardo el dato en v1: 
 								# lexico + quantityCharacterInLexico = lexico[quantityCharacterInLexico]
 	lbu		v0,24($fp)				# Cargo en v0 el caracter a guardar (variable character).
 	sb		v0,0(v1)				# Guardo en la direccion apuntada por v1 el caracter guardado en v0.
+
+	# quantityCharacterInLexico ++;
 	lw		v0,quantityCharacterInLexico		
 	addu		v0,v0,1					# Incremento en 1 el valor de quantityCharacterInLexico.
 	sw		v0,quantityCharacterInLexico		
+
+	# return OKEY;
 	sw		zero,32($fp)				# Guardo OKEY (= 0) en la direccion de memoria 32($fp).
 $ReturnLoadInLexico:
 	lw		v0,32($fp)

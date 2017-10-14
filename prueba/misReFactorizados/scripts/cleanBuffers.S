@@ -96,9 +96,9 @@ $FreeLexico:
 	lw		a1,quantityCharacterInLexico
 	la		t9,verifyPalindromic
 	jal		ra,t9					# Ejecuto verifyPalindromic. Verifico si lo que quedo en lexico es palindromo.
-	move		$v1,v0
+	move		v1,v0
 	li		v0,TRUE
-	bne		$v1,v0,$FreeMyLexico			# If no es palindromo, goto FreeMyLexico
+	bne		v1,v0,$FreeMyLexico			# If no es palindromo, goto FreeMyLexico
 
 	li		a0,LINE_BREAK
 	la		t9,loadInLexico
