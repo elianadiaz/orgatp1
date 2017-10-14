@@ -4,7 +4,7 @@
 
 #define FALSE 0
 #define TRUE 1
-#define LEXICO_BUFFER_SIZE 10
+#define LEXICO_BUFFER_SIZE 3
 
 enum ParameterState {
 	 OKEY = 0, INCORRECT_QUANTITY_PARAMS = 1, ERROR_MEMORY = 2, ERROR_READ = 3, ERROR_WRITE = 4, LOAD_I_BUFFER = 5
@@ -17,6 +17,7 @@ char * lexico = NULL;
 int quantityCharacterInLexico = 0;
 int savedInOFile = FALSE;
 char * obuffer = NULL;
+char * ibuffer = NULL;
 int bytesLexico = 0;
 
 char toLowerCase(char word) {
@@ -99,9 +100,6 @@ void * myRealloc(void * ptr, size_t tamanyoNew, int tamanyoOld) {
 
 	void * ptrNew = (void *) malloc(tamanyoNew);
 	if (ptrNew == NULL) {
-		free(ptr);
-		ptr = NULL;
-
 		return NULL;
 	}
 
@@ -137,18 +135,18 @@ void initializeBuffer(size_t bytes, char * buffer) {
     }
 }
 
-int writeOBufferInOFile(int * amountSavedInOBuffer) {
+int writeBufferInOFile(int * amountSavedInBuffer, char * buffer) {
 	int completeDelivery = FALSE;
 	int bytesWriteAcum = 0;
-	int bytesToWrite = (*amountSavedInOBuffer);
+	int bytesToWrite = (*amountSavedInBuffer);
 	while (completeDelivery == FALSE) {
-		int bytesWrite = write(oFileDescriptor, obuffer + bytesWriteAcum, bytesToWrite);
+		int bytesWrite = write(oFileDescriptor, buffer + bytesWriteAcum, bytesToWrite);
 		if (bytesWrite < 0) {
 			return ERROR_WRITE;
 		}
 
 		bytesWriteAcum += bytesWrite;
-		bytesToWrite = (*amountSavedInOBuffer) - bytesWriteAcum;
+		bytesToWrite = (*amountSavedInBuffer) - bytesWriteAcum;
 
 		if (bytesToWrite <= 0) {
 			completeDelivery = TRUE;
@@ -158,7 +156,49 @@ int writeOBufferInOFile(int * amountSavedInOBuffer) {
 	return OKEY;
 }
 
-int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
+int loadInLexico(char character) {
+	if (lexico == NULL) {
+		lexico = malloc(LEXICO_BUFFER_SIZE * sizeof(char));
+		bytesLexico = LEXICO_BUFFER_SIZE;
+	} else if (quantityCharacterInLexico >= bytesLexico) {
+		int bytesLexicoPreview = bytesLexico;
+		bytesLexico += LEXICO_BUFFER_SIZE;
+		lexico = myRealloc(lexico, bytesLexico*sizeof(char), bytesLexicoPreview);
+	}
+
+	if (lexico == NULL) {
+		fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
+		return ERROR_MEMORY;
+	}
+
+	lexico[quantityCharacterInLexico] = character;
+	quantityCharacterInLexico ++;
+
+	return OKEY;
+}
+
+void copyFromLexicoToOBuffer(int * amountSavedInOBuffer) {
+	int i;
+	for (i = 0; i < quantityCharacterInLexico; ++i) {
+		obuffer[*amountSavedInOBuffer] = lexico[i];
+		*amountSavedInOBuffer = (*amountSavedInOBuffer) + 1;
+	}
+}
+
+char * loadBufferInitial(size_t size, char * buffer) {
+	buffer = (char *) malloc(size*sizeof(char));
+	if (buffer == NULL) {
+		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (buffer). \n");
+		return NULL;
+	}
+
+	// initialize the buffer
+	initializeBuffer(size, buffer);
+
+	return buffer;
+}
+
+int processDataInIBuffer(char * ibuffer, int * amountSavedInOBuffer) {
 	int findEnd = FALSE;
 	int loadIBuffer = FALSE;
 	int idx = 0;
@@ -170,25 +210,14 @@ int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
 		}
 
 		if (findEnd != TRUE && isKeywords(character) == TRUE) {
-			if (lexico == NULL) {
-				lexico = malloc(LEXICO_BUFFER_SIZE * sizeof(char));
-				bytesLexico = LEXICO_BUFFER_SIZE;
-			} else if (quantityCharacterInLexico >= bytesLexico) {
-				int bytesLexicoPreview = bytesLexico;
-				bytesLexico += LEXICO_BUFFER_SIZE;
-				lexico = myRealloc(lexico, bytesLexico*sizeof(char), bytesLexicoPreview);
+			int rdo = loadInLexico(character);
+			if (rdo != OKEY) {
+				return rdo;
 			}
-
-			if (lexico == NULL) {
-				fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
-				return ERROR_MEMORY;
-			}
-
-			lexico[quantityCharacterInLexico] = character;
-			quantityCharacterInLexico ++;
 		} else if (quantityCharacterInLexico > 0) {
 			int itsPalindromic = verifyPalindromic(lexico, quantityCharacterInLexico);
 			if (itsPalindromic == TRUE) {
+				loadInLexico('\n');
 				int amountToSaved = (*amountSavedInOBuffer) + quantityCharacterInLexico;
 				if ((*amountSavedInOBuffer) > 0 || savedInOFile == TRUE) {
 					amountToSaved ++; // Es para el separador
@@ -199,48 +228,31 @@ int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
 					 * y luego rearmo el buffer de salida y reinicio la cantidad guardada en 0.
 					 */
 					obuffer = myRealloc(obuffer, amountToSaved*sizeof(char), (*amountSavedInOBuffer));
-					if ((*amountSavedInOBuffer) > 0 || savedInOFile == TRUE) {
-						obuffer[*amountSavedInOBuffer] = '\n';
-						*amountSavedInOBuffer = (*amountSavedInOBuffer) + 1;
+					if (obuffer == NULL) {
+						fprintf(stderr, "[Error] Hubo un error en memoria (obuffer). \n");
+						return ERROR_MEMORY;
 					}
+					copyFromLexicoToOBuffer(amountSavedInOBuffer);
 
-					int i;
-					for (i = 0; i < quantityCharacterInLexico; ++i) {
-						obuffer[*amountSavedInOBuffer] = lexico[i];
-						*amountSavedInOBuffer = (*amountSavedInOBuffer) + 1;
-					}
-
-					int rdoWrite = writeOBufferInOFile(amountSavedInOBuffer);
+					int rdoWrite = writeBufferInOFile(amountSavedInOBuffer, obuffer);
 					if (rdoWrite != OKEY) {
 						return rdoWrite;
 					}
 
 					*amountSavedInOBuffer = 0;
 					savedInOFile = TRUE;
+
 					if (obuffer != NULL) {
 						free(obuffer);
 						obuffer = NULL;
 					}
 
-					obuffer = (char *) malloc(osize*sizeof(char));
+					obuffer = loadBufferInitial(osize, obuffer);
 					if (obuffer == NULL) {
-						fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (obuffer). \n");
 						return ERROR_MEMORY;
 					}
-
-					// initialize the obuffer
-					initializeBuffer(osize, obuffer);
 				} else {
-					if ((*amountSavedInOBuffer) > 0 || savedInOFile == TRUE) {
-						obuffer[*amountSavedInOBuffer] = '\n';
-						*amountSavedInOBuffer = (*amountSavedInOBuffer) + 1;
-					}
-
-					int i;
-					for (i = 0; i < quantityCharacterInLexico; ++i) {
-						obuffer[*amountSavedInOBuffer] = lexico[i];
-						*amountSavedInOBuffer = (*amountSavedInOBuffer) + 1;
-					}
+					copyFromLexicoToOBuffer(amountSavedInOBuffer);
 				}
 			}
 
@@ -260,32 +272,97 @@ int executePalindromeWrite(char * ibuffer, int * amountSavedInOBuffer) {
 	return rdo;
 }
 
+enum IBufferState {
+	 COMPLETE_DELIVERY = -1, END_I_FILE = -2, ERROR_I_READ = -3, OKEY_I_FILE = -4
+};
+
+int loadIBufferWithIFile(size_t ibytes, int ifd) {
+	int completeDelivery = FALSE;
+	int bytesReadAcum = 0;
+	int bytesToRead = ibytes;
+	int end = FALSE;
+	// Lleno el buffer de entrada
+	while (completeDelivery == FALSE && end == FALSE) {
+		int bytesRead = read(ifd, ibuffer + bytesReadAcum, bytesToRead);
+		if (bytesRead == -1) {
+			fprintf(stderr, "[Error] Hubo un error en la lectura de datos del archivo. \n");
+			return ERROR_I_READ;
+		}
+
+		if (bytesRead == 0) {
+			end = TRUE;
+		}
+
+		bytesReadAcum += bytesRead;
+		bytesToRead = ibytes - bytesReadAcum;
+
+		if (bytesToRead <= 0) {
+			completeDelivery = TRUE;
+		}
+	}
+
+	if (end == TRUE) {
+		return END_I_FILE;
+	}
+
+	return OKEY_I_FILE;
+}
+
+int cleanBuffers(int * amountSavedInOBuffer) {
+	int rdo = OKEY;
+	if (ibuffer != NULL) {
+		free(ibuffer);
+		ibuffer = NULL;
+	}
+
+	if (obuffer != NULL) {
+		if (amountSavedInOBuffer != NULL && (*amountSavedInOBuffer) > 0) {
+			int rdoWrite = writeBufferInOFile(amountSavedInOBuffer, obuffer);
+			if (rdoWrite != OKEY) {
+				rdo = rdoWrite;
+			}
+		}
+
+		free(obuffer);
+		obuffer = NULL;
+	}
+
+	if (lexico != NULL) {
+		if (quantityCharacterInLexico > 0 && verifyPalindromic(lexico, quantityCharacterInLexico) == TRUE) {
+			loadInLexico('\n');
+			int rdoWrite = writeBufferInOFile(&quantityCharacterInLexico, lexico);
+			if (rdoWrite != OKEY) {
+				rdo = rdoWrite;
+			}
+		}
+
+		free(lexico);
+		lexico = NULL;
+	}
+
+	return rdo;
+}
+
 int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
 	isize = ibytes;
 	osize = obytes;
 	oFileDescriptor = ofd;
-	char * ibuffer = (char *) malloc(ibytes*sizeof(char));
+
+	ibuffer = loadBufferInitial(isize, ibuffer);
 	if (ibuffer == NULL) {
-		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (ibuffer). \n");
 		return ERROR_MEMORY;
 	}
 
-	obuffer = (char *) malloc(obytes*sizeof(char));
+	obuffer = loadBufferInitial(osize, obuffer);
 	if (obuffer == NULL) {
-		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (obuffer). \n");
 		free(ibuffer);
 		ibuffer = NULL;
 		return ERROR_MEMORY;
 	}
 
-	// initialize the ibuffer
-	initializeBuffer(ibytes, ibuffer);
-    // initialize the obuffer
-	initializeBuffer(obytes, obuffer);
-
 	int * amountSavedInOBuffer = (int *) malloc(sizeof(int));
 	if (amountSavedInOBuffer == NULL) {
-		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (amountSaved). \n");
+		fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (amountSavedInOBuffer). \n");
 		free(ibuffer);
 		ibuffer = NULL;
 		free(obuffer);
@@ -295,44 +372,13 @@ int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
 	amountSavedInOBuffer[0] = 0;
 
 	int rdoProcess = OKEY;
-	int end = FALSE;
 	int error = FALSE;
-	while (end == FALSE && error == FALSE) {
-		int completeDelivery = FALSE;
-		int bytesReadAcum = 0;
-		size_t bytesToRead = ibytes;
-		// Lleno el buffer de entrada
-		while (completeDelivery == FALSE && end == FALSE) {
-			int bytesRead = read(ifd, ibuffer + bytesReadAcum, bytesToRead);
-			if (bytesRead == -1) {
-				fprintf(stderr, "[Error] Hubo un error en la lectura de datos del archivo. \n");
-				free(ibuffer);
-				ibuffer = NULL;
-				free(obuffer);
-				obuffer = NULL;
-				free(amountSavedInOBuffer);
-				amountSavedInOBuffer = NULL;
-				if (lexico != NULL) {
-					free(lexico);
-					lexico = NULL;
-				}
-				return ERROR_READ;
-			}
-
-			if (bytesRead == 0) {
-				end = TRUE;
-			}
-
-			bytesReadAcum += bytesRead;
-			bytesToRead = ibytes - bytesReadAcum;
-
-			if (bytesToRead <= 0) {
-				completeDelivery = TRUE;
-			}
-		}
+	int rdoLoadIBuffer = OKEY_I_FILE;
+	while (rdoLoadIBuffer == OKEY_I_FILE && error == FALSE) {
+		rdoLoadIBuffer = loadIBufferWithIFile(ibytes, ifd);
 
 		if (ibuffer != NULL && ibuffer[0] != '\0') {
-			int resultProcessWrite = executePalindromeWrite(ibuffer, amountSavedInOBuffer);
+			int resultProcessWrite = processDataInIBuffer(ibuffer, amountSavedInOBuffer);
 			if (resultProcessWrite == LOAD_I_BUFFER) {
 				// initialize the ibuffer
 				initializeBuffer(ibytes, ibuffer);
@@ -344,31 +390,15 @@ int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
 		}
 	}
 
-	if (ibuffer != NULL) {
-		free(ibuffer);
-		ibuffer = NULL;
-	}
-
-	if (obuffer != NULL) {
-		if (amountSavedInOBuffer != NULL && (*amountSavedInOBuffer) > 0) {
-			int rdoWrite = writeOBufferInOFile(amountSavedInOBuffer);
-			if (rdoWrite != OKEY) {
-				rdoProcess = rdoWrite;
-			}
-		}
-
-		free(obuffer);
-		obuffer = NULL;
-	}
-
-	if (lexico != NULL) {
-		free(lexico);
-		lexico = NULL;
-	}
+	int rdoClean = cleanBuffers(amountSavedInOBuffer);
 
 	if (amountSavedInOBuffer != NULL) {
 		free(amountSavedInOBuffer);
 		amountSavedInOBuffer = NULL;
+	}
+
+	if (rdoClean != OKEY) {
+		return rdoClean;
 	}
 
 	return rdoProcess;

@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include "process.h"
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 
 #define FALSE 0
 #define TRUE 1
@@ -51,117 +51,21 @@ int executeVersion() {
 	return OKEY;
 }
 
-int executeWithDefaultParameter(char * path, int isInputDefault, int isOutputDefault) {
-	FILE * fileInput = NULL;
-	FILE * fileOutput = NULL;
-
-	if (isInputDefault == TRUE && isOutputDefault == TRUE) {
-		fileInput = stdin;
-		fileOutput = stdout;
-	} else {
-		if (isInputDefault == TRUE) {
-			fileInput = stdin;
-
-			fileOutput = fopen(path, "w"); // Opens a text file for writing. Pace the content.
-			if (fileOutput == NULL) {
-				fprintf(stderr, "[Error] El archivo de output no pudo ser abierto para escritura: %s \n", path);
-				return ERROR_FILE;
-			}
-		} else {
-			fileInput = fopen(path, "r"); // Opens an existing text file for reading purpose.
-			if (fileInput == NULL) {
-				fprintf(stderr, "[Error] El archivo de input no pudo ser abierto para lectura: %s \n", path);
-				return ERROR_FILE;
-			}
-
-			fileOutput = stdout;
-		}
-	}
-
-	int ifd = fileno(fileInput);
-	int ofd = fileno(fileOutput);
-
-	int executeResult = palindrome(ifd, ibytes, ofd, obytes);
-
-	if (isInputDefault == FALSE || isOutputDefault == FALSE) {
-		if (isInputDefault == TRUE) {
-			if (fileOutput != NULL) {
-				int result = fclose(fileOutput);
-				if (result == EOF) {
-					fprintf(stderr, "[Warning] El archivo de output no pudo ser cerrado correctamente: %s \n", path);
-					return ERROR_FILE;
-				}
-			}
-		} else {
-			if (fileInput != NULL) {
-				int result = fclose(fileInput);
-				if (result == EOF) {
-					fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", path);
-					return ERROR_FILE;
-				}
-			}
-		}
-	}
-
-	return executeResult;
-}
-
-int executeWithParameters(char * pathInput, char * pathOutput) {
-	FILE * fileInput = fopen(pathInput, "r"); // Opens an existing text file for reading purpose.
-	if (fileInput == NULL) {
-		fprintf(stderr, "[Error] El archivo de input no pudo ser abierto para lectura: %s \n", pathInput);
-		return ERROR_FILE;
-	}
-
-	FILE * fileOutput = fopen(pathOutput, "w"); // Opens a text file for writing. Pace the content.
-	if (fileOutput == NULL) {
-		fprintf(stderr, "[Error] El archivo de output no pudo ser abierto para escritura: %s \n", pathOutput);
-
-		int result = fclose(fileInput);
-		if (result == EOF) {
-			fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
-		}
-
-		return ERROR_FILE;
-	}
-
-	int ifd = fileno(fileInput);
-	int ofd = fileno(fileOutput);
-
-	int executeResult = palindrome(ifd, ibytes, ofd, obytes);
-
-	int resultFileInputClose = 0; // EOF = -1
-	if (fileInput != NULL) {
-		resultFileInputClose = fclose(fileInput);
-		if (resultFileInputClose == EOF) {
-			fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
-		}
-	}
-
-	if (fileOutput != NULL) {
-		int result = fclose(fileOutput);
-		if (result == EOF) {
-			fprintf(stderr, "[Warning] El archivo de output no pudo ser cerrado correctamente: %s \n", pathOutput);
-			return ERROR_FILE;
-		}
-	}
-
-	if (resultFileInputClose) {
-		return ERROR_FILE;
-	}
-
-	return executeResult;
-}
-
 int executeByMenu(int argc, char **argv) {
+	int inputFileDefault = FALSE;
+	int outputFileDefault = FALSE;
+	FILE * fileInput = stdin;
+	FILE * fileOutput = stdout;
+
 	// Always begins with /
 	if (argc == 1) {
 		// Run with default parameters
-		return executeWithDefaultParameter(NULL, TRUE, TRUE);
+		inputFileDefault = TRUE;
+		outputFileDefault = TRUE;
 	}
 
-	char * inputValue = NULL;
-	char * outputValue = NULL;
+	char * pathInput = NULL;
+	char * pathOutput = NULL;
 	char * iBufBytes = NULL;
 	char * oBufBytes = NULL;
 
@@ -197,10 +101,10 @@ int executeByMenu(int argc, char **argv) {
 				 finish = TRUE;
 				 break;
 			 case 'i' :
-				 inputValue = optarg;
+				 pathInput = optarg;
 				 break;
 			 case 'o' :
-				 outputValue = optarg;
+				 pathOutput = optarg;
 				 break;
 			 case 'I' :
 				 iBufBytes = optarg;
@@ -240,46 +144,65 @@ int executeByMenu(int argc, char **argv) {
 		}
 	}
 
-	if (inputValue == NULL && outputValue == NULL) {
-		return executeWithDefaultParameter(NULL, TRUE, TRUE);
+	if (pathInput == NULL || strcmp("-",pathInput) == 0) {
+		inputFileDefault = TRUE;
 	}
 
-	// / -i fileInput
-	if (inputValue != NULL && outputValue == NULL) {
-		if (strcmp("-",inputValue) == 0) {
-			return executeWithDefaultParameter(NULL, TRUE, TRUE);
-		} else {
-			return executeWithDefaultParameter(inputValue, FALSE, TRUE);
-		}
+	if (pathOutput == NULL || strcmp("-",pathOutput) == 0) {
+		outputFileDefault = TRUE;
 	}
 
-	// / -o fileOutput
-	if (inputValue == NULL && outputValue != NULL) {
-		if (strcmp("-",outputValue) == 0) {
-			return executeWithDefaultParameter(NULL, TRUE, TRUE);
-		} else {
-			return executeWithDefaultParameter(outputValue, TRUE, FALSE);
+	if (inputFileDefault == FALSE) {
+		fileInput = fopen(pathInput, "r"); // Opens an existing text file for reading purpose.
+		if (fileInput == NULL) {
+			fprintf(stderr, "[Error] El archivo de input no pudo ser abierto para lectura: %s \n", pathInput);
+			return ERROR_FILE;
 		}
 	}
 
-	if (inputValue != NULL && outputValue != NULL) {
-		if (strcmp("-",inputValue) == 0 && strcmp("-",outputValue) == 0) {
-			return executeWithDefaultParameter(NULL, TRUE, TRUE);
-		}
+	if (outputFileDefault == FALSE) {
+		fileOutput = fopen(pathOutput, "w"); // Opens a text file for writing. Pace the content.
+		if (fileOutput == NULL) {
+			fprintf(stderr, "[Error] El archivo de output no pudo ser abierto para escritura: %s \n", pathOutput);
 
-		if (strcmp("-",inputValue) == 0 && strcmp("-",outputValue) != 0) {
-			return executeWithDefaultParameter(outputValue, TRUE, FALSE);
-		}
+			if (inputFileDefault == FALSE) {
+				int result = fclose(fileInput);
+				if (result == EOF) {
+					fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
+				}
+			}
 
-		if (strcmp("-",inputValue) != 0 && strcmp("-",outputValue) == 0) {
-			return executeWithDefaultParameter(inputValue, FALSE, TRUE);
+			return ERROR_FILE;
 		}
-
-		return executeWithParameters(inputValue, outputValue);
 	}
 
-	fprintf(stderr, "[Error] Incorrecta option de menu.\n");
-	return INCORRECT_MENU;
+	int ifd = fileno(fileInput);
+	int ofd = fileno(fileOutput);
+
+	int executeResult = palindrome(ifd, ibytes, ofd, obytes);
+
+	int resultFileInputClose = 0; // EOF = -1
+
+	if (inputFileDefault == FALSE && fileInput != NULL) {
+		resultFileInputClose = fclose(fileInput);
+		if (resultFileInputClose == EOF) {
+			fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
+		}
+	}
+
+	if (outputFileDefault == FALSE && fileOutput != NULL) {
+		int result = fclose(fileOutput);
+		if (result == EOF) {
+			fprintf(stderr, "[Warning] El archivo de output no pudo ser cerrado correctamente: %s \n", pathOutput);
+			resultFileInputClose = EOF;
+		}
+	}
+
+	if (resultFileInputClose != 0) {
+		return ERROR_FILE;
+	}
+
+	return executeResult;
 }
 
 int main(int argc, char **argv) {
