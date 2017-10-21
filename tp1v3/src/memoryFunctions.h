@@ -1,8 +1,6 @@
 /*
  * memoryFunctions.h
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #ifndef MEMORYFUNCTIONS_H_

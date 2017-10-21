@@ -17,7 +17,7 @@
 #include "constants.h"
 #include "palindromeFunctions.h"
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 size_t isize = 1;
 size_t osize = 1;

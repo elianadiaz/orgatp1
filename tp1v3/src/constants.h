@@ -1,8 +1,6 @@
 /*
  * constants.h
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #ifndef CONSTANTS_H_
@@ -27,7 +25,6 @@
 #define ERROR_WRITE					-4
 #define ERROR_PUTCH					-5
 #define ERROR_I_READ				-6
-#define END_I_FILE					-7
 
 
 #endif /* CONSTANTS_H_ */

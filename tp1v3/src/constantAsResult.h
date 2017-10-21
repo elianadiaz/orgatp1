@@ -1,8 +1,6 @@
 /*
  * constantAsResult.h
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #ifndef CONSTANTASRESULT_H_

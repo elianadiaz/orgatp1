@@ -1,8 +1,6 @@
 /*
  * palindromeFunctions.h
  *
- *  Created on: Oct 18, 2017
- *      Author: ediaz
  */
 
 #ifndef PALINDROMEFUNCTIONS_H_

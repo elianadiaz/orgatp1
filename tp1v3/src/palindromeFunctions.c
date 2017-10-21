@@ -1,20 +1,9 @@
 /*
  * palindromeFunctions.c
  *
- *  Created on: Oct 18, 2017
- *      Author: ediaz
  */
 
-// TODO ACA VAN LAS FUNCIONES RELACIONADAS A PALINDROMES:
-// toLowerCase  , verifyPalindromic , isKeywords , palindrome
-
 #include "palindromeFunctions.h"
-
-/*
-char * lexico = NULL;
-int quantityCharacterInLexico = 0;
-size_t sizeLexico = 0;
-*/
 
 Buffer lexico;
 

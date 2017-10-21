@@ -1,8 +1,6 @@
 /*
  * bufferFunctions.c
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #include "bufferFunctions.h"
@@ -10,11 +8,12 @@
 /*** input  ***/
 int ifd = 0;
 int lastPositionInIBufferRead = -1;
-Buffer ibuffer = { NULL, 0, 0 }; // TODO HAY Q PASARLO A PUNTERO
+Buffer ibuffer = { NULL, 0, 0 };
+int endIFile = FALSE;
 
 /*** output  ***/
 int ofd = 0;
-Buffer obuffer = { NULL, 0, 0 }; // TODO HAY Q PASARLO A PUNTERO
+Buffer obuffer = { NULL, 0, 0 };
 
 
 void initializeInput(int iFileDescriptor, size_t ibytes) {
@@ -39,10 +38,9 @@ int loadIBufferWithIFile() {
 	int completeDelivery = FALSE;
 	ibuffer.quantityCharactersInBuffer = 0;
 	int bytesToRead = ibuffer.sizeBytes;
-	int end = FALSE;
 
 	// Lleno el buffer de entrada
-	while (completeDelivery == FALSE && end == FALSE) {
+	while (completeDelivery == FALSE && endIFile == FALSE) {
 		int bytesRead = read(ifd, ibuffer.buffer + ibuffer.quantityCharactersInBuffer, bytesToRead);
 		if (bytesRead == -1) {
 			fprintf(stderr, "[Error] Hubo un error en la lectura de datos del archivo. \n");
@@ -50,7 +48,7 @@ int loadIBufferWithIFile() {
 		}
 
 		if (bytesRead == 0) {
-			end = TRUE;
+			endIFile = TRUE;
 		}
 
 		ibuffer.quantityCharactersInBuffer += bytesRead;
@@ -61,16 +59,16 @@ int loadIBufferWithIFile() {
 		}
 	}
 
-	if (end == TRUE) {
-		return END_I_FILE;
-	}
-
 	lastPositionInIBufferRead = -1;
+
 	return OKEY_I_FILE;
 }
 
 int getch() {
 	if (ibuffer.buffer == NULL || lastPositionInIBufferRead == (ibuffer.quantityCharactersInBuffer - 1)) {
+		if (endIFile == TRUE) {
+			return EOF;
+		}
 		int resultLoadIBuffer = loadIBufferWithIFile();
 		if (resultLoadIBuffer == ERROR_I_READ) {
 			return ERROR_I_READ;

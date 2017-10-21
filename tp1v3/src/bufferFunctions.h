@@ -1,8 +1,6 @@
 /*
  * bufferFunctions.h
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #ifndef BUFFERFUNCTIONS_H_
