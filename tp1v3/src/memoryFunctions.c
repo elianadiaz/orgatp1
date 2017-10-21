@@ -9,6 +9,10 @@
 
 #include "memoryFunctions.h"
 
+/*
+ * post: la funcion invocante debe liberar la memoria
+ * 		 del viejo ptr.
+ */
 void * myRealloc(void * ptr, size_t tamanyoNew, int tamanyoOld) {
 	if (tamanyoNew <= 0) {
 		free(ptr);
@@ -40,9 +44,12 @@ void * myRealloc(void * ptr, size_t tamanyoNew, int tamanyoOld) {
 		src++;
 	}
 
-	free(ptr);
-	ptr = NULL;
+	/*
+	 * La responsabilidad de liberar ptr
+	 * queda para la funcion invocante.
+	 */
+	//free(ptr);
+	//ptr = NULL;
 
 	return ptrNew;
 }
-
