@@ -1,8 +1,6 @@
 /*
  * bufferFunctions.c
  *
- *  Created on: Oct 19, 2017
- *      Author: ediaz
  */
 
 #include "bufferFunctions.h"
@@ -170,7 +168,7 @@ int loadInBuffer(char character, Buffer * buffer, size_t sizeInitial) {
 	}
 
 	if (buffer->buffer == NULL) {
-		fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
+		fprintf(stderr, "[Error] Hubo un error en memoria (buffer). \n");
 		return ERROR_MEMORY;
 	}
 
