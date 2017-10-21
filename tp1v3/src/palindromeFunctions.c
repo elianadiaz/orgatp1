@@ -10,9 +10,13 @@
 
 #include "palindromeFunctions.h"
 
+/*
 char * lexico = NULL;
 int quantityCharacterInLexico = 0;
 size_t sizeLexico = 0;
+*/
+
+Buffer lexico;
 
 char toLowerCase(char word) {
 	/* ASCII:
@@ -30,22 +34,22 @@ char toLowerCase(char word) {
 }
 
 int verifyPalindromic() {
-	if (lexico == NULL || quantityCharacterInLexico <= 0) {
+	if (lexico.buffer == NULL || lexico.quantityCharactersInBuffer <= 0) {
 		return FALSE;
 	}
 
-	if (quantityCharacterInLexico == 1) {
+	if (lexico.quantityCharactersInBuffer == 1) {
 		// The word has one character
 		return TRUE;
 	}
 
-	double middle = (double)quantityCharacterInLexico / 2;
+	double middle = (double)lexico.quantityCharactersInBuffer / 2;
 	int idx = 0;
 	int validPalindromic = TRUE;
-	int last = quantityCharacterInLexico - 1;
+	int last = lexico.quantityCharactersInBuffer - 1;
 	while(idx < middle && last >= middle && validPalindromic == TRUE) {
-		char firstCharacter = toLowerCase(lexico[idx]);
-		char lastCharacter = toLowerCase(lexico[last]);
+		char firstCharacter = toLowerCase(lexico.buffer[idx]);
+		char lastCharacter = toLowerCase(lexico.buffer[last]);
 		if (firstCharacter != lastCharacter) {
 			validPalindromic = FALSE;
 		}
@@ -74,38 +78,19 @@ int isKeywords(char character) {
 	return FALSE;
 }
 
-int loadInLexico(char character) {
-	if (lexico == NULL) {
-		lexico = malloc(LEXICO_BUFFER_SIZE * sizeof(char));
-		sizeLexico = LEXICO_BUFFER_SIZE;
-	} else if (quantityCharacterInLexico >= sizeLexico) {
-		int bytesLexicoPreview = sizeLexico;
-		sizeLexico = bytesLexicoPreview * 2;
-		lexico = myRealloc(lexico, sizeLexico*sizeof(char), bytesLexicoPreview);
-	}
-
-	if (lexico == NULL) {
-		fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
-		return ERROR_MEMORY;
-	}
-
-	lexico[quantityCharacterInLexico] = character;
-	quantityCharacterInLexico ++;
-
-	return OKEY;
-}
-
 int saveIfPalindrome() {
 	int itsPalindromic = verifyPalindromic();
 
 	if (itsPalindromic == TRUE) {
 		int idx = 0;
 		int error = FALSE;
-		while(idx < quantityCharacterInLexico && error == FALSE) {
-			int result = putch(lexico[idx]);
+		while(idx < lexico.quantityCharactersInBuffer && error == FALSE) {
+			int result = putch(lexico.buffer[idx]);
 			if (result == EOF) {
 				error = TRUE;
 			}
+
+			idx ++;
 		}
 
 		if (error == FALSE) {
@@ -116,7 +101,7 @@ int saveIfPalindrome() {
 		}
 
 		if (error == TRUE) {
-			fprintf(stderr, "[Error] Error al escribir en el archivo output la palabra %s", lexico);
+			fprintf(stderr, "[Error] Error al escribir en el archivo output la palabra %s", lexico.buffer);
 			return ERROR_PUTCH;
 		}
 	}
@@ -124,30 +109,23 @@ int saveIfPalindrome() {
 	return OKEY;
 }
 
-void freeLexico() {
-	free(lexico);
-	lexico = NULL;
-	sizeLexico = 0;
-	quantityCharacterInLexico = 0;
-}
-
 int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
 	initializeInput(ifd, ibytes);
 	initializeOutput(ofd, obytes);
 
-	quantityCharacterInLexico = 0;
+	lexico.quantityCharactersInBuffer = 0;
 	int icharacter = getch();
 	int result = OKEY;
 	while (icharacter != EOF && icharacter != ERROR_I_READ && result == OKEY) {
 		char character = icharacter;
 
 		if (isKeywords(character) == TRUE) {
-			result = loadInLexico(character);
+			result = loadInBuffer(character, &lexico, LEXICO_BUFFER_SIZE);
 		} else {
 			// Dentro de esta funcion se invoca a putch si el lexico es palindromo.
 			result = saveIfPalindrome();
 
-			freeLexico();
+			cleanContentBuffer(&lexico);
 		}
 
 		icharacter = getch();
@@ -159,7 +137,14 @@ int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
 		result = resultFlush;
 	}
 
-	freeLexico();
+	cleanContentBuffer(&lexico);
+
+	resultFlush = flush();
+	if (result == OKEY) {
+		result = resultFlush;
+	}
+	freeResources();
+
 
 	return result;
 }
