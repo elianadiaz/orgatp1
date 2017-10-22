@@ -1,0 +1,263 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{ucs}
+\usepackage[spanish]{babel}
+\usepackage[left=2cm,top=4cm,right=2cm,bottom=3cm]{geometry} 
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{dcolumn}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{ esint }
+\usepackage{fancyhdr}
+\usepackage{enumerate} 
+\pagestyle{fancy}
+\usepackage{tocbibind}
+\lhead{Física IIID - Trabajo Práctico - Radiación }
+\rhead{\includegraphics[width=2.5 cm]{logo}}
+\author{lmv}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+\vspace*{-1in}
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[width=8cm]{./logo}
+\end{center}
+\end{figure}
+\begin{LARGE}
+\textbf{Departamento de Física(62.15)}\\
+\end{LARGE}
+\vspace*{0.15in}
+\begin{LARGE}
+\textbf{Física IIID}\\
+\end{LARGE}
+\vspace*{0.3in}
+\begin{Huge}
+\textbf{Radiación}\\
+\textbf{Cuestionario}\\
+\end{Huge}
+\vspace*{0.15in}
+\vspace*{0.2in}
+\begin{flushleft}
+\textbf{Cuatrimestre y año:} 2º cuatrimestre, 2017.\\
+\textbf{Profesora Titular:} Arcondo, Bibiana Graciela.\\
+%\textbf{Docente a cargo del TP:} \\
+\textbf{Grupo:} N01 \\
+\vspace*{0.2in}
+\end{flushleft}
+\begin{large}
+\raggedright\textbf{Integrantes}\\
+\end{large}
+\vspace*{0.1in}
+\begin{flushleft}
+\begin{tabular}{| >{\centering\arraybackslash}p{4.9cm}| >{\centering\arraybackslash}m{4.9cm}|  >{\centering\arraybackslash}m{4.9cm} |}
+\hline
+\textbf{Padrón} & \textbf{Apellido y Nombre} & \textbf{Email}\\
+\hline
+89341& Lucas Verón & lucasveron86@gmail.com\\
+\hline
+ &   & \\
+\hline
+ &   & \\
+\hline
+ &   & \\
+\hline
+ 
+\end{tabular}
+\end{flushleft}
+\end{center}
+\vspace*{0.1in}
+\begin{tabular}{| >{\arraybackslash}p{7.4cm}| >{\arraybackslash}p{7.4cm}|}
+\hline
+\textbf{Fecha de 1ra. entrega: } & \textbf{Fecha de reentrega: }\\
+\hline
+\multicolumn{2}{|>{\arraybackslash}p{7.2cm}|}{\textbf{Observaciones:}
+\vspace{7cm}  }\\
+\hline
+\multicolumn{2}{|>{\arraybackslash}p{7.2cm}|}{\textbf{Nota final:}}\\
+\hline
+\end{tabular}
+\end{titlepage}
+\tableofcontents 
+\vspace*{0.3in}
+\newpage
+
+
+\section{Cuestionario previo}
+
+\begin{enumerate}[a)]
+    \item Para pasar la temperatura de Celsius a Kelvin, se suma 273,15 al valor de temperatura dado.\\
+    Una vez realizada la conversión, se utiliza la Ley de Wien para hallar la longitud de onda pico a través de la fórmula:
+\begin{center}
+$\lambda _{pico} * T  = b$
+\end{center}
+Acá b = 2,898 x 10-3 m K,  conocida como constante de Wien.\\
+
+De esta forma se tiene:\\
+\begin{center}
+$\lambda _{max} = \frac{2,898 * 10^{-3} [Km]}{T[K]}$
+\end{center}
+
+400 °C = 273 + 400 = 673 K		$\lambda_{pico} $= $2,898x10^{-3}$ / 673 = 4,30x$10^{-6}$m = 4300 nm\\
+
+800 °C = 273 + 800 = 1073 K		$\lambda_{pico}$ = 2,898x$10^{-3}$ / 1073 = 2,70x$10^{-6}$m = 2700 nm\\
+
+1200 °C = 273 + 1200 = 1473 K	$\lambda_{pico} $= 2,898x$10^{-3}$ / 1473 = 1,97x10-6$10^{-6}$m = 1970 nm\\
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=14cm]{espectroVisible}
+    \caption{Espectros de radiación en función de $\lambda$ de un cuerpo negro.}
+  \label{fig:fuente}
+\end{figure}
+
+\newpage
+ En el rango visible de 4000 a 7500  Å
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=13cm]{espectroTotal}
+    \caption{espectros de radiación en función de $\lambda$ de un cuerpo negro.Posición de las longitudes de onda para la cual se alcanzan los máximos de intensidad.}
+  \label{fig:fuente}
+\end{figure}
+
+\newpage
+
+\item La radiancia espectral se define como R($\lambda$,T) donde $\lambda$ es la longitud de onda medida en metros y T la temperatura del cuerpo negro en Kelvin. La fórmula a utilizar a continuación es la Ley de distribución de Planck. \\
+
+\begin{center}
+R($\lambda$,T)= $\frac{2 \pi h c^2}{\lambda^5(e^\frac{hc}{\lambda K T} - 1)}$
+\end{center}
+
+h = constante de Planck\\
+c = velocidad de la luz en el vacío\\
+k = constante de Boltzmann\\
+
+Datos:	$\lambda$ = 1600 nm = 1600 x $10^{-9}$ m  =  1,6 x $10^{-6}$ m\\
+
+$\lambda$ =  1,6 x $10^{-6}$ m\\
+h = 6,62606896 x $10^{-34}$ J·seg\\
+c = 2,99792458 x 108 m/seg\\
+k = 1,3806504 x $10^{-23}$ J/K\\
+
+Para la realización de los cálculos se utilizó Mathcad, obteniendo así:\\
+
+R (1600 x $10^{-9}$m, 673K) = 5,635 x 107 [W/m3]\\
+R (1600 x $10^{-9}$m, 1073K) = 8,191 x 109 [W/m3]\\
+R (1600 x $10^{-9}$m, 1473K) = 7,97 x 1010 [W/m3]\\
+
+\item Sabiendo que el rango visible es de 4000 a 7500 \AA , se calculó la radiancia utilizando dos métodos distintos: un método numérico y la aproximación del rectángulo.
+\begin{itemize}
+\item Soluciones “exactas”, usando Mathcad.\\
+Mathcad usa el método de integración de Romberg para cálculos de integrales definidas\footnote{http://www.allmathcad.com/ru/integral.html,
+http://www.engr.colostate.edu$/\thicksim$ dga/mech102/handouts/integration.pdf}.
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 673K)  \,\partial \lambda = 1.94 .10^{-5} \left[\frac{w}{m^2} \right]
+\]
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 1073K)  \,\partial \lambda = 1.355 \left[\frac{w}{m^2} \right]
+\]
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 1473K)  \,\partial \lambda = 254,64 \left[\frac{w}{m^2} \right]
+\]
+\item Por el método del rectángulo:\\
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 673K)  \,\partial \lambda = (750 nm - 400 nm).R( 575 nm, 673K)= 1.498 .10^{-7} \left[\frac{w}{m^2} \right]
+\]
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 1073K)  \,\partial \lambda  = (750 nm - 400 nm).R( 575 nm, 1073K)= 0,156 \left[\frac{w}{m^2} \right]
+\]
+
+\[
+\int_{400 nm}^{750 nm} \! R( \lambda, 1473K)  \,\partial \lambda =
+(750 nm - 400 nm).R( 575 nm, 1473K) = 87,535 \left[\frac{w}{m^2} \right]
+\] 
+
+\newpage
+
+Comparación de resultados por medio de sus errores relativos porcentuales:\\
+T= 673K		error producido = $1,92.10^{-5}$ \\
+T= 1073K 	error producido = 1,199\\
+T= 1473K 	error producido = 167,10\\
+\end{itemize}
+
+Podemos ver que a mayor temperatura, el error al usar el método del rectángulo para aproximar el valor es mayor. Esto se observa en el gráfico, viendo que cuando mayor es la temperatura más tarda en empezar a crecer los valores de la función, por lo que el área está más "desbalanceada".
+
+\item La resistencia en materiales conductores viene dada por:\\
+\begin{center}
+R = $\frac{\rho L}{A}$
+\end{center}
+
+Acá $\rho $ es la resistividad, L la longitud y A el área.
+En un intervalo de temperaturas no demasiado grande, la resistividad de un conductor puede representarse aproximadamente por la ecuación:
+\begin{center}
+$\rho = \rho_0[1 + \alpha(T - T_0)]$
+\end{center}
+
+Como se ve, es una función de 1er orden de Taylor, en caso de necesitar mayor aproximación se puede agregar el término cuadrático. Esto se va a dar cuando tratemos con temperaturas elevadas.\\
+
+Para poder comprender mejor lo que sucede en la conductividad, introduciremos el concepto de "Camino libre medio", que es la distancia o espacio entre dos colisiones sucesivas de las moléculas de un gas. Recordemos que en un gas, sus moléculas están en constante movimiento chocando unas con otras, y tambien que
+la temperatura del gas es función de la energía cinética de sus moléculas.\\
+La formula para calcular dicho tiempo es:\\
+\begin{center}
+$l=v*t$ , Siendo l=velocidad cuadrática media de las moleculas(proporcional a la raiz cuadrada de la temperatura), y t=tiempo entre colisiones
+\end{center}
+
+Los materiales conductores presentan una sección eficaz, que al estar compuestos por iones (en base al concepto de camino libre medio) cuando aumenta la temperatura esto hace que aumente la agitación de dichos iones, causando mayor cantidad de colisiones y por lo tanto una mayor resistencia eléctrica.
+
+\item La dependencia de la resistencia eléctrica de un semiconductor con la temperatura está dada por:
+\begin{center}
+$ R = Ae^\frac{B}{T}$
+\end{center}
+
+Dónde A y B son constantes propias del semiconductor, mientras que T es el valor de la temperatura y R el correspondiente valor de resistencia del semiconductor.\\
+Se puede observar que la resistencia es inversamente proporcional con la temperatura, de manera contraria a como lo hacen los conductores. La explicación de esto es que al suministrar energía los electrones de la banda de valencia (teoría de bandas) pasan a la de conducción, aumentando la misma y por lo tanto, disminuyendo la resistencia.\\
+
+En materiales como aislantes y semiconductores, existe una “banda de energía prohibida” entre la “banda de valencia” y la “banda de conducción” que los electrones no pueden ocupar si no tienen suficiente energía para saltar de la banda de valencia hacia la banda de conducción.\\
+Esta “banda de energía prohibida”, influida por el campo eléctrico de las partículas y de las vibraciones causadas en ellas por el calor, es la que da la característica de “resistividad” al átomo, mientras mayor es esta banda, mayor es la resistencia.\\
+La resistencia de un material macroscópico también dependerá de su geometría. Si es muy largo, requerirá mayor número de colisiones para transportarse generando mayor resistencia, y si es muy delgado, habrá menores electrones disponibles para transportar la energía, generando mayor resistencia.\\
+La unidad de resistencia puede medirse matemáticamente, su unidad es el ohm, que se define como la resistencia que se opone al paso de electrones. La resistencia disipa la energía en forma de “fonones” o vibraciones de calor generando entropía.\\
+
+\item Un pirómetro es un dispositivo capaz de medir la temperatura de la superficie de una sustancia sin necesidad de estar en contacto con ella. Es un instrumento que mide la radiación térmica, generalmente cuando se trata de temperaturas muy elevadas. Para realizar la medición debemos tener en cuenta también la distancia al objeto a medir.\\
+El rango de medición general de los pirómetros es de -50 °C hasta 4000 °C.\\
+
+En un pirómetro óptico, para medir la temperatura de un metal incandescente, se lo observa a través del pirómetro, y se gira una perilla para ajustar la temperatura de un filamento incandescente proyectado en el campo de visión. Cuando el color del filamento es idéntico al del metal, se puede leer la temperatura en una escala según el ajuste del color del filamento. Es decir, se utiliza el ojo humano como detector valiéndose de una lámpara de comparación.\\
+
+Los pirómetros infrarrojos se basan en la Ley de Planck. Determinan la temperatura de un objeto a través de la radiación (infrarroja y, si lo presenta, luz visible) irradiada por el objeto.\\ 
+Cuentan con filtros que sólo dejan pasar determinada longitud de onda, haciendo que dicho parámetro sea constante. \\
+La radiación es dirigida a un elemento sensible al calor, como por ejemplo una termopila, el cual producirá una corriente eléctrica cuando parte de él sea calentado. Cuanto más caliente sea el objeto, mayor será la corriente generada por la termopila. Por lo tanto en base a la corriente generada se obtiene el valor de la temperatura. El detector devuelve el valor de la radiancia espectral.\\
+Es importante tener en cuenta, que en datos reales la emisividad se multiplica por la Ley de Planck.
+
+\begin{center}
+R($\lambda$,T)= $\frac{2 \pi h c^2}{\lambda^5(e^\frac{hc}{\lambda K T} - 1)}$
+\end{center}
+
+Los valores de c, h, k y (por lo dicho antes) $\lambda$ son constantes, por lo que se puede despejar T de la misma.
+
+\end{enumerate}
+
+\newpage
+
+%\addcontentsline{toc}{chapter}{Referencias}
+%\begin{thebibliography}{99}
+%\bibitem{1} \textsc{\underline{Bibliografía:}}
+%\begin{itemize}
+%\item Física cuántica: átomos, moléculas, sólidos, núcleos y partículas. %Resnick \& Eisberg, Editorial Limusa. 
+%\item Fundamentos de Física II “Electricidad y Magnetismo”. Francis W. Sears, Tercera Edición, Editorial Aguilar, 1961.
+%\end{itemize}
+%\bibitem{3} \textsc{\underline{Software utilizado:}}
+%\begin{itemize}
+%\item Microsoft Office Word: elaboración del informe.
+%\item Microsoft Office Excel: cuentas de las tablas, gráficos.
+%\item Dia: figura 1.
+%\item MathCAD: cuentas, gráficos.
+%\end{itemize}
+
+%\end{thebibliography}.
+\end{document}
