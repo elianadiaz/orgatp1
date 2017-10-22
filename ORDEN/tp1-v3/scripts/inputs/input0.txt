@@ -1,0 +1,7 @@
+#Probamos que hay 4 líneas con palabras palíndromas distintas
+
+Ojo con la entrega del tp0
+
+El Oso es un animal
+
+Una provincia argentina es Neuquén
