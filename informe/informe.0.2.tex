@@ -1,0 +1,1397 @@
+\documentclass[a4paper,8pt]{article}
+
+\usepackage{float}
+
+\usepackage{graphicx}
+\usepackage[ansinew]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{color}
+\usepackage{fancyvrb}
+\usepackage{listings}
+
+\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+%\usepackage[spanish]{babel}
+%\usepackage{times}
+%\usepackage{color}
+\definecolor{gray97}{gray}{.97}
+\definecolor{gray75}{gray}{.75}
+\definecolor{gray45}{gray}{.45}
+%\definecolor{green1}{rgb}{34, 153, 84}
+
+\usepackage{listings}
+
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=C,
+  showstringspaces=false,
+  basicstyle=\color{black}\scriptsize,
+  keywordstyle=\bfseries\color{red}\ttfamily\scriptsize,
+  commentstyle=\bfseries\color{gray}\ttfamily\footnotesize,
+  identifierstyle=\color{black}\scriptsize,
+  stringstyle=\color{blue}\scriptsize,
+}
+
+\lstdefinestyle{customasm}{
+  belowcaptionskip=1\baselineskip,
+  frame=L,
+  xleftmargin=\parindent,
+  language=[x86masm]Assembler,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\itshape\color{black},
+}
+
+\lstset{ frame=Ltb,
+framerule=0pt,
+aboveskip=0.5cm,
+framextopmargin=3pt,
+framexbottommargin=3pt,
+framexleftmargin=0.1cm,
+framesep=0pt,
+rulesep=.4pt,
+backgroundcolor=\color{gray97},
+rulesepcolor=\color{black},
+%
+stringstyle=\ttfamily,
+showstringspaces = false,
+basicstyle=\small\ttfamily,
+commentstyle=\color{gray45},
+keywordstyle=\bfseries,
+%
+numbers=left,
+numbersep=15pt,
+numberstyle=\tiny,
+numberfirstline = false,
+breaklines=true,
+}
+
+\lstset{literate=
+  {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+  {à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+  {À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+  {ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+  {Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+  {â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+  {Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+  {?}{{\oe}}1 {?}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+  {?}{{\H{u}}}1 {?}{{\H{U}}}1 {?}{{\H{o}}}1 {?}{{\H{O}}}1
+  {ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+  {?}{{\EUR}}1 {£}{{\pounds}}1
+}
+
+\lstset{escapechar=@,style=customc}
+
+% minimizar fragmentado de listados
+\lstnewenvironment{listing}[1][]
+{\lstset{#1}\pagebreak[0]}{\pagebreak[0]}
+
+\lstdefinestyle{consola}
+{basicstyle=\scriptsize\bf\ttfamily,
+backgroundcolor=\color{gray75},
+}
+
+%\lstdefinestyle{C}
+%{language=C,
+%}
+
+\title{		\textbf{Trabajo Práctico Nro. 1: programación MIPS: Reentrega}}
+
+\author{	Lucas Verón, \textit{Padrón Nro. 89.341}                     \\
+            \texttt{ lucasveron86@gmail.com }                                              \\[2.5ex]
+            Eliana Diaz, \textit{Padrón Nro. 89.324}                     \\
+            \texttt{ diazeliana09@gmail.com }                                              \\[4.5ex]
+            Alan Helouani, \textit{Padrón Nro. 90.289}                     \\
+            \texttt{ alanhelouani@gmail.com }                                              \\[2.5ex]
+            \normalsize{2do. Cuatrimestre de 2017}                                      \\
+            \normalsize{66.20 Organización de Computadoras  $-$ Práctica Martes}  \\
+            \normalsize{Facultad de Ingeniería, Universidad de Buenos Aires}            \\
+       }
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}   % quita el número en la primer página
+
+
+\begin{abstract}
+
+El presente proyecto tiene por finalidad familiarizarnos con el conjunto de instrucciones MIPS y el concepto de ABI
+
+\end{abstract}
+
+
+\section{Introducción}
+Se detallará el diseño e implementación de un programa en lenguaje C y MIPS que procesa archivos de texto por línea de comando, como así también la forma de ejecución del mismo y los resultados obtenidos en las distintas pruebas ejecutadas.
+
+El programa recibe los archivos o streams de entrada y salida, e imprime aquellas palabras del archivo de entrada (componentes léxicos) que sean palíndromos.
+
+Se define como palabra a aquellos componentes léxicos del stream de entrada compuestos exclusivamente por combinaciones de caracteres a-z, 0-9, - (signo menos) y _  (guión bajo).
+
+Por otro lado, se considera que una palabra, número o frase, es \textit{palíndroma} cuando se lee igual hacía adelante que hacía atrás.
+
+Se implementará una función  "palindrome"  la cual se encargará de verificar si efectivamente la palabra es o no palindroma.
+La función estará escrita en assembly MIPS.
+
+Los streams serán leídos y escritos de a bloques de memoría configurables, los cuales serán almacenados en un "buffer" para luego ser leídos de a uno.
+
+\section{Diseño}
+
+
+Las funcionalidades requeridas son las siguientes:
+	\begin{itemize}
+		\item Ayuda (Help): Presentación un detalle de los comandos que se pueden ejecutar.
+		\item Versión: Se debe indicar la versión del programa.
+		\item Procesar los datos:
+			\begin{itemize}
+				\item Con especificación sólo del archivo de entrada.
+				\item Con especificación sólo del archivo de salida.
+				\item Con especificación del archivo de entrada y de salida.
+				\item Sin especificación del archivo de entrada ni de salida.
+			\end{itemize}
+		\item Setting del tamaño del buffer in y buffer out; indicando de a cuantos caracteres se debe leer y escribir.
+	\end{itemize}
+
+A continuación un gráfico que muestra la disposición de la implementación:
+
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{impl_palindrome.eps}	
+  \caption{Diagrama: disposición palindrome}
+  \label{fig:diagrama palindrome}
+\end{figure}
+
+
+\section{Implementación}
+
+\subsection{Código fuente en lenguaje C: bufferFunctions.c}
+\begin{lstlisting}[style=customc]
+/*
+ * bufferFunctions.c
+ *
+ */
+
+#include "bufferFunctions.h"
+
+/*** input  ***/
+int ifd = 0;
+int lastPositionInIBufferRead = -1;
+Buffer ibuffer = { NULL, 0, 0 };
+//Determina si el input file tiene un EOF
+int endIFile = FALSE;
+
+/*** output  ***/
+int ofd = 0;
+Buffer obuffer = { NULL, 0, 0 };
+
+
+void initializeInput(int iFileDescriptor, size_t ibytes) {
+	ifd = iFileDescriptor;
+	ibuffer.sizeBytes = ibytes;
+}
+
+void initializeOutput(int oFileDescriptor, size_t obytes) {
+	ofd = oFileDescriptor;
+	obuffer.sizeBytes = obytes;
+}
+/*
+ * Carga en el input buffer con caracteres.
+ */
+int loadIBufferWithIFile() {
+
+	/*
+	 * Reservo memoria para alocar caracteres leídos.
+	 * La determinación del buffer se encuentra en el parámetro
+	 * de entrada en la llamada al programa.
+	 */
+	if (ibuffer.buffer == NULL) {
+		ibuffer.buffer = (char *) malloc(ibuffer.sizeBytes*sizeof(char));
+		if (ibuffer.buffer == NULL) {
+			fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (ibuffer). \n");
+			return ERROR_MEMORY;
+		}
+	}
+
+	int completeDelivery = FALSE;
+	ibuffer.quantityCharactersInBuffer = 0;
+	int bytesToRead = ibuffer.sizeBytes;
+
+	// Lleno el buffer de entrada
+	while (completeDelivery == FALSE && endIFile == FALSE) {
+		int bytesRead = read(ifd, ibuffer.buffer + ibuffer.quantityCharactersInBuffer, bytesToRead);
+		if (bytesRead == -1) {
+			fprintf(stderr, "[Error] Hubo un error en la lectura de datos del archivo. \n");
+			return ERROR_I_READ;
+		}
+
+		if (bytesRead == 0) {
+			endIFile = TRUE;
+		}
+
+		ibuffer.quantityCharactersInBuffer += bytesRead;
+		bytesToRead = ibuffer.sizeBytes - ibuffer.quantityCharactersInBuffer;
+
+		if (bytesToRead <= 0) {
+			completeDelivery = TRUE;
+		}
+	}
+
+	lastPositionInIBufferRead = -1;
+
+	return OKEY_I_FILE;
+}
+
+/*
+ * Obtengo un caracter(char) del input file.
+ * Lo seteo en el buffer.
+ */
+int getch() {
+	if (ibuffer.buffer == NULL || lastPositionInIBufferRead == (ibuffer.quantityCharactersInBuffer - 1)) {
+		if (endIFile == TRUE) {
+			return EOF;
+		}
+		int resultLoadIBuffer = loadIBufferWithIFile();
+		if (resultLoadIBuffer == ERROR_I_READ) {
+			return ERROR_I_READ;
+		}
+
+		if (ibuffer.quantityCharactersInBuffer == 0) {
+			return EOF;
+		}
+	}
+
+	lastPositionInIBufferRead ++;
+	return ibuffer.buffer[lastPositionInIBufferRead];
+}
+
+/*
+ * Escribe los caracteres en el output file
+ * de acuerdo al tamaño del buffer.
+ */
+int writeBufferInOFile() {
+	if (obuffer.buffer == NULL || obuffer.quantityCharactersInBuffer <= 0) {
+		return OKEY;
+	}
+
+	int completeDelivery = FALSE;
+	int bytesWriteAcum = 0;
+	int bytesToWrite = obuffer.quantityCharactersInBuffer;
+	while (completeDelivery == FALSE) {
+		int bytesWrite = write(ofd, obuffer.buffer + bytesWriteAcum, bytesToWrite);
+		if (bytesWrite < 0) {
+			fprintf(stderr, "[Error] Hubo un error al escribir en el archivo. \n");
+			return ERROR_WRITE;
+		}
+
+		bytesWriteAcum += bytesWrite;
+		bytesToWrite = obuffer.quantityCharactersInBuffer - bytesWriteAcum;
+
+		if (bytesToWrite <= 0) {
+			completeDelivery = TRUE;
+		}
+	}
+
+	return OKEY;
+}
+
+/*
+ * Coloca un char en el output buffer.
+ * Llama a la escritura en el output file
+ * de ser necesario.
+ */
+int putch(int character) {
+	if (obuffer.buffer == NULL) {
+		obuffer.buffer = (char *) malloc(obuffer.sizeBytes*sizeof(char));
+		if (obuffer.buffer == NULL) {
+			fprintf(stderr, "[Error] Hubo un error de asignacion de memoria (obuffer). \n");
+			return ERROR_MEMORY;
+		}
+
+		obuffer.quantityCharactersInBuffer = 0;
+	}
+
+	obuffer.buffer[obuffer.quantityCharactersInBuffer] = character;
+	obuffer.quantityCharactersInBuffer ++;
+
+	if (obuffer.quantityCharactersInBuffer == obuffer.sizeBytes) {
+		writeBufferInOFile();
+		obuffer.quantityCharactersInBuffer = 0;
+	}
+
+	return OKEY;
+}
+/*
+ * Flusea el contenido del buffer
+ */
+int flush() {
+	if (obuffer.buffer != NULL && obuffer.quantityCharactersInBuffer > 0) {
+		return writeBufferInOFile();
+	}
+
+	return OKEY;
+}
+
+/*
+ * Libera los recursos solicitados por ibuffer/obuffer.
+ */
+void freeResources() {
+	if (ibuffer.buffer != NULL) {
+		free(ibuffer.buffer);
+		ibuffer.buffer = NULL;
+	}
+
+	if (obuffer.buffer != NULL) {
+		free(obuffer.buffer);
+		obuffer.buffer = NULL;
+	}
+}
+
+/*
+ * Carga el caracter en el buffer
+ */
+int loadInBuffer(char character, Buffer * buffer, size_t sizeInitial) {
+	if (buffer->buffer == NULL) {
+		buffer->buffer = malloc(sizeInitial * sizeof(char));
+		buffer->sizeBytes = sizeInitial;
+	} else if (buffer->quantityCharactersInBuffer >= buffer->sizeBytes) {
+		size_t bytesLexicoPreview = buffer->sizeBytes;
+		//Se hace una reasignacion exponencial del espacio.
+		buffer->sizeBytes = bytesLexicoPreview * 2;
+		// Esto es para no perder memoria.
+		char * auxiliary = myRealloc(buffer->buffer, buffer->sizeBytes*sizeof(char), bytesLexicoPreview);
+		if (auxiliary == NULL) {
+			cleanContentBuffer(buffer);
+		} else {
+			buffer->buffer = auxiliary;
+		}
+	}
+
+	if (buffer->buffer == NULL) {
+		fprintf(stderr, "[Error] Hubo un error en memoria (lexico). \n");
+		return ERROR_MEMORY;
+	}
+
+	buffer->buffer[buffer->quantityCharactersInBuffer] = character;
+	buffer->quantityCharactersInBuffer ++;
+
+	return OKEY;
+}
+
+/*
+ * Limpia el contenido del buffer pasado por parámetro.
+ */
+void cleanContentBuffer(Buffer * buffer) {
+	if (buffer->buffer != NULL) {
+		free(buffer->buffer);
+		buffer->buffer = NULL;
+	}
+
+	buffer->quantityCharactersInBuffer = 0;
+	buffer->sizeBytes = 0;
+}
+\end{lstlisting}
+\subsection{Código fuente en lenguaje C: memoryFunctions.c}
+\begin{lstlisting}[style=customc]
+/*
+ * memoryFunctions.c
+ *
+ */
+#include "memoryFunctions.h"
+
+void * myRealloc(void * ptr, size_t tamanyoNew, int tamanyoOld) {
+	if (tamanyoNew <= 0) {
+		free(ptr);
+		ptr = NULL;
+
+		return NULL;
+	}
+
+	void * ptrNew = (void *) malloc(tamanyoNew);
+	if (ptrNew == NULL) {
+		return NULL;
+	}
+
+	if (ptr == NULL) {
+		return ptrNew;
+	}
+
+	int end = tamanyoNew;
+	if (tamanyoOld < tamanyoNew) {
+		end = tamanyoOld;
+	}
+
+	char *tmp = ptrNew;
+	const char *src   = ptr;
+
+	while (end--) {
+		*tmp = *src;
+		tmp++;
+		src++;
+	}
+
+	free(ptr);
+	ptr = NULL;
+
+	return ptrNew;
+}
+\end{lstlisting}
+\subsection{Código fuente en lenguaje C: tp1.c}
+\begin{lstlisting}[style=customc]
+/*
+ ============================================================================
+ Name        : tp1.c
+ Author      : Grupo orga 66.20
+ Version     : 1
+ Copyright   : Orga6620 - Tp1
+ Description : Trabajo practico 1: Programacion MIPS
+ ============================================================================
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+
+#include "constants.h"
+#include "palindromeFunctions.h"
+
+#define VERSION "1.2"
+
+size_t isize = 1;
+size_t osize = 1;
+
+int executeHelp() {
+	fprintf(stdout, "Usage: \n");
+	fprintf(stdout, "	tp1 -h \n");
+	fprintf(stdout, "	tp1 -V \n");
+	fprintf(stdout, "	tp1 [options] \n");
+	fprintf(stdout, "Options: \n");
+	fprintf(stdout, "	-V, --version		Print version and quit. \n");
+	fprintf(stdout, "	-h, --help	    	Print this information. \n");
+	fprintf(stdout, "	-i, --input	    	Location of the input file. \n");
+	fprintf(stdout, "	-o, --output		Location of the output file. \n");
+	fprintf(stdout, "	-I, --ibuf-bytes	Byte-count of the input buffer. \n");
+	fprintf(stdout, "	-O, --obuf-bytes	Byte-count of the output buffer. \n");
+	fprintf(stdout, "Examples: \n");
+	fprintf(stdout, "	tp1 -i ~/input -o ~/output \n");
+
+	return OKEY;
+}
+
+int executeVersion() {
+	fprintf(stdout, "Version: \"%s\" \n", VERSION);
+
+	return OKEY;
+}
+
+int executeByMenu(int argc, char **argv) {
+	int inputFileDefault = FALSE;
+	int outputFileDefault = FALSE;
+	FILE * fileInput = stdin;
+	FILE * fileOutput = stdout;
+
+	// Always begins with /
+	if (argc == 1) {
+		// Run with default parameters
+		inputFileDefault = TRUE;
+		outputFileDefault = TRUE;
+	}
+
+	char * pathInput = NULL;
+	char * pathOutput = NULL;
+	char * iBufBytes = NULL;
+	char * oBufBytes = NULL;
+
+	/* Una cadena que lista las opciones cortas validas */
+	const char* const smallOptions = "Vhi:o:I:O:";
+
+	/* Una estructura de varios arrays describiendo los valores largos */
+	const struct option longOptions[] = {
+		{"version",		no_argument, 		0,  'V' },
+		{"help",		no_argument,       	0,  'h' },
+		{"input",		required_argument,  0,	'i' }, // optional_argument
+		{"output",		required_argument,  0,	'o' },
+		{"ibuf-bytes",	required_argument, 	0,  'I' },
+		{"obuf-bytes",	required_argument, 	0,  'O' },
+		{0,			0,                 	0,   0  }
+	};
+
+	int incorrectOption = FALSE;
+	int finish = FALSE;
+	int result = OKEY;
+	int longIndex = 0;
+	char opt = 0;
+	/*
+	 * Switch para obtener los parámetros de entrada.
+	 */
+	while ((opt = getopt_long(argc, argv, smallOptions,
+				   longOptions, &longIndex )) != -1 && incorrectOption == FALSE && finish == FALSE) {
+		switch (opt) {
+			 case 'V' :
+				 result = executeVersion();
+				 finish = TRUE;
+				 break;
+			 case 'h' :
+				 result = executeHelp();
+				 finish = TRUE;
+				 break;
+			 case 'i' :
+				 pathInput = optarg;
+				 break;
+			 case 'o' :
+				 pathOutput = optarg;
+				 break;
+			 case 'I' :
+				 iBufBytes = optarg;
+				 break;
+			 case 'O' :
+				 oBufBytes = optarg;
+				 break;
+			 default:
+				 incorrectOption = TRUE;
+		}
+	}
+
+	if (incorrectOption == TRUE) {
+		fprintf(stderr, "[Error] Incorrecta option de menu.\n");
+		return INCORRECT_MENU;
+	}
+
+	if (finish == TRUE) {
+		return result;
+	}
+
+	if (iBufBytes != NULL) {
+		char *finalPtr;
+		isize = strtoul(iBufBytes, &finalPtr, 10);
+		if (isize == 0) {
+			fprintf(stderr, "[Error] Incorrecta cantidad de bytes para el buffer de entrada.\n");
+			return ERROR_BYTES;
+		}
+	}
+
+	if (oBufBytes != NULL) {
+		char *finalPtr;
+		osize = strtoul(oBufBytes, &finalPtr, 10);
+		if (osize == 0) {
+			fprintf(stderr, "[Error] Incorrecta cantidad de bytes para el buffer de salida.\n");
+			return ERROR_BYTES;
+		}
+	}
+
+	if (pathInput == NULL || strcmp("-",pathInput) == 0) {
+		inputFileDefault = TRUE;
+	}
+
+	if (pathOutput == NULL || strcmp("-",pathOutput) == 0) {
+		outputFileDefault = TRUE;
+	}
+	/*
+	 * Se abren los ficheros de lectura y escritura.
+	 * Se chequea si hubo errores en la apertura.
+	 */
+	if (inputFileDefault == FALSE) {
+		fileInput = fopen(pathInput, "r"); // Opens an existing text file for reading purpose.
+		if (fileInput == NULL) {
+			fprintf(stderr, "[Error] El archivo de input no pudo ser abierto para lectura: %s \n", pathInput);
+			return ERROR_FILE;
+		}
+	}
+
+	if (outputFileDefault == FALSE) {
+		fileOutput = fopen(pathOutput, "w"); // Opens a text file for writing. Pace the content.
+		if (fileOutput == NULL) {
+			fprintf(stderr, "[Error] El archivo de output no pudo ser abierto para escritura: %s \n", pathOutput);
+
+			if (inputFileDefault == FALSE) {
+				int result = fclose(fileInput);
+				if (result == EOF) {
+					fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
+				}
+			}
+
+			return ERROR_FILE;
+		}
+	}
+	/*
+	 * Obtenemos el file descriptor number.
+	 */
+	int ifd = fileno(fileInput);
+	int ofd = fileno(fileOutput);
+	/*
+	 * Llamado a función principal
+	 */
+	int executeResult = palindrome(ifd, isize, ofd, osize);
+
+	int resultFileInputClose = 0; // EOF = -1
+
+	/*
+	 * Se cierran los ficheros de lectura y escritura.
+	 * Se cheqeuea si hubo errores en la cierre.
+	 */
+	if (inputFileDefault == FALSE && fileInput != NULL) {
+		resultFileInputClose = fclose(fileInput);
+		if (resultFileInputClose == EOF) {
+			fprintf(stderr, "[Warning] El archivo de input no pudo ser cerrado correctamente: %s \n", pathInput);
+		}
+	}
+
+	if (outputFileDefault == FALSE && fileOutput != NULL) {
+		int result = fclose(fileOutput);
+		if (result == EOF) {
+			fprintf(stderr, "[Warning] El archivo de output no pudo ser cerrado correctamente: %s \n", pathOutput);
+			resultFileInputClose = EOF;
+		}
+	}
+
+	if (resultFileInputClose != 0) {
+		return ERROR_FILE;
+	}
+
+	return executeResult;
+}
+
+/*
+ * Chequeo cantidad de parámetros.
+ * Ejecución de menú.
+ */
+int main(int argc, char **argv) {
+	// / -i lalala.txt -o pepe.txt -I 2 -O 3 => 9 parameters as maximum
+	if (argc > 9) {
+		fprintf(stderr, "[Error] Cantidad máxima de parámetros incorrecta: %d \n", argc);
+		return INCORRECT_QUANTITY_PARAMS;
+	}
+
+	return executeByMenu(argc, argv);
+}
+\end{lstlisting}
+\subsection[6pt]{Código fuente en lenguaje C: palindromeFunctions.c}
+\begin{lstlisting}[style=customc]
+/*
+ * palindromeFunctions.c
+ *
+ */
+
+#include "palindromeFunctions.h"
+
+/*
+ * Contiene la palabra leida.
+ */
+Buffer lexico;
+
+/*
+ * Los caracteres válidos son aquellos que
+ * se encuentran dentro del rango ASCII:
+ * A - Z = [65 - 90]
+ * a - z = [97 - 122]
+ * 0 - 9 = [48 - 57]
+ * - =  45
+ * _ = 95
+ */
+char toLowerCase(char word) {
+	/* ASCII:
+	 * 		A - Z = [65 - 90]
+	 * 		a - z = [97 - 122]
+	 * 		0 - 9 = [48 - 57]
+	 * 		- =  45
+	 * 		_ = 95
+	 */
+	if (word >= 65 && word <= 90) {
+		word += 32;
+	}
+
+	return word;
+}
+
+/*
+ * Pre: lexico esta seteado. Lexico contiene la palabra.
+ * Verifica que el lexico(palabra) sea palindroma.
+ */
+int verifyPalindromic() {
+	if (lexico.buffer == NULL || lexico.quantityCharactersInBuffer <= 0) {
+		return FALSE;
+	}
+
+	/*
+	 * Las palabras de 1 sólo caracter válido
+	 * son siempre palindromas.
+	 */
+	if (lexico.quantityCharactersInBuffer == 1) {
+		// The word has one character
+		return TRUE;
+	}
+
+	double middle = (double)lexico.quantityCharactersInBuffer / 2;
+	int idx = 0;
+	int validPalindromic = TRUE;
+	int last = lexico.quantityCharactersInBuffer - 1;
+	while(idx < middle && last >= middle && validPalindromic == TRUE) {
+		char firstCharacter = toLowerCase(lexico.buffer[idx]);
+		char lastCharacter = toLowerCase(lexico.buffer[last]);
+		if (firstCharacter != lastCharacter) {
+			validPalindromic = FALSE;
+		}
+
+		idx ++;
+		last --;
+	}
+
+	return validPalindromic;
+}
+
+/*
+ * Verifica si un determinado caracter es un
+ * 'caracter válido' para procesar.
+ */
+int isKeywords(char character) {
+	/* ASCII:
+	 * 		A - Z = [65 - 90]
+	 * 		a - z = [97 - 122]
+	 * 		0 - 9 = [48 - 57]
+	 * 		- =  45
+	 * 		_ = 95
+	 */
+	if ((character >= 65 && character <= 90) || (character >= 97 && character <= 122)
+			|| (character >= 48 && character <= 57)
+			|| character == 45 || character == 95) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*
+ * Verifica si es palindromo.
+ * Si es palindromo, llama a putch para enviar el char
+ * al buffer.
+ */
+int saveIfPalindrome() {
+	int itsPalindromic = verifyPalindromic();
+
+	if (itsPalindromic == TRUE) {
+		int idx = 0;
+		int error = FALSE;
+		while(idx < lexico.quantityCharactersInBuffer && error == FALSE) {
+			int result = putch(lexico.buffer[idx]);
+			if (result == EOF) {
+				error = TRUE;
+			}
+			idx ++;
+		}
+
+		if (error == FALSE) {
+			int result = putch('\n');
+			if (result == EOF) {
+				error = TRUE;
+			}
+		}
+
+		if (error == TRUE) {
+			fprintf(stderr, "[Error] Error al escribir en el archivo output la palabra %s", lexico.buffer);
+			return ERROR_PUTCH;
+		}
+	}
+	return OKEY;
+}
+
+/*
+ * Función principal. Verifica si un caracter(char) es válido.
+ * Si el char es válido lo carga en el buffer.
+ */
+int palindrome(int ifd, size_t ibytes, int ofd, size_t obytes) {
+	initializeInput(ifd, ibytes);
+	initializeOutput(ofd, obytes);
+
+	lexico.quantityCharactersInBuffer = 0;
+	int icharacter = getch();
+	int result = OKEY;
+	while (icharacter != EOF && icharacter != ERROR_I_READ && result == OKEY) {
+		char character = icharacter;
+
+		if (isKeywords(character) == TRUE) {
+			result = loadInBuffer(character, &lexico, LEXICO_BUFFER_SIZE);
+		} else {
+			//Si el caracter NO es válido -> se deberia dejar de procesar!
+			//
+			// Dentro de esta funcion se invoca a putch si el lexico es palindromo.
+			result = saveIfPalindrome();
+
+			cleanContentBuffer(&lexico);
+		}
+
+		icharacter = getch();
+	}
+
+	// Guardo lo que haya quedado en lexico si es palindromo.
+	int resultFlush = saveIfPalindrome();
+	if (result == OKEY) {
+		result = resultFlush;
+	}
+
+	cleanContentBuffer(&lexico);
+
+	resultFlush = flush();
+	if (result == OKEY) {
+		result = resultFlush;
+	}
+	freeResources();
+
+
+	return result;
+}
+\end{lstlisting}
+
+\section{Código MIPS32}
+\subsection{Código MIPS32: bufferFunctions.S}
+\begin{lstlisting}
+CODIGO ACA
+\end{lstlisting}
+#include <mips/regdef.h>
+#include <sys/syscall.h>
+
+#include "constants.h"
+#include "memoryFunctions.h"
+
+
+##-----	initializeInput -----##
+
+	.text
+	.align		2
+	.globl		initializeInput
+	.ent		initializeInput
+initializeInput:
+	.frame		$fp,16,ra
+	.set		noreorder
+	.cpload		t9
+	.set		reorder
+
+	# Stack frame creation
+	subu		sp,sp,16
+
+	.cprestore 0
+	sw		$fp,12(sp)
+	sw		gp,8(sp)
+	
+	# de aqui al fin de la funcion uso $fp en lugar de sp.
+	move		$fp,sp
+
+	# Parameters
+	sw		a0,16($fp)		# Guardo en la direccion de memoria 16($fp) la variable iFileDescriptor (int).
+	sw		a1,20($fp)		# Guardo en la direccion de memoria 20($fp) la variable ibytes (size_t).
+
+	# ofd = oFileDescriptor;
+	lw		v0,16($fp)		# Cargo en v0 iFileDescriptor.
+	sw		v0,ifd			# Guardo el contenido de v0, iFileDescriptor, en la variable ifd.
+
+	# obuffer.sizeBytes = obytes;
+	lw		v0,20($fp)		# Cargo en v0 obytes.
+	sw		v0,ibuffer+8		# Guardo en sizeBytes (ibuffer+8) el contenido de v0 (obytes).
+
+	move		sp,$fp
+	lw		$fp,12(sp)
+	# destruyo stack frame
+	addu		sp,sp,16
+	# vuelvo a funcion llamante
+	j		ra
+	
+	.end		initializeInput
+	
+
+
+
+## Variables auxiliares
+
+	.data
+
+
+	# -------------------------------------- #
+	#					 #
+	# typedef struct  {			 #
+	#    char * buffer;			 #
+	#    int quantityCharactersInBuffer;	 #
+	#    size_t sizeBytes;			 #
+	# } Buffer;				 #
+	#					 #
+	# Buffer ibuffer			 #
+	# Buffer obuffer			 #
+	#					 #
+	# -------------------------------------- #
+
+
+	## Variables para la parte de input
+
+	.globl	ifd
+#	.section	.bss   #TODO DESPUES VER SI ESTO SE PUEDE ELIMINAR
+	.align	2
+	.type	ifd, @object
+	.size	ifd, 4
+ifd:
+	.space	4
+
+	.globl	lastPositionInIBufferRead
+	.align	2
+	.type	lastPositionInIBufferRead, @object
+	.size	lastPositionInIBufferRead, 4
+lastPositionInIBufferRead:
+	.word	-1
+
+	.globl	ibuffer	
+#	.section	.bss  TODO VER SI ANDA BIEN Y SACARLO
+	.align	2
+	.type	ibuffer, @object
+	.size	ibuffer, 12
+ibuffer:
+	.space	12
+
+	.globl	endIFile
+	.globl	endIFile
+	.align	2
+	.type	endIFile, @object
+	.size	endIFile, 4
+endIFile:
+	.space	4
+
+
+	## Variables para la parte de input
+
+	.globl	ofd
+	.align	2
+	.type	ofd, @object
+	.size	ofd, 4
+ofd:
+	.space	4
+
+	.globl	obuffer
+	.align	2
+	.type	obuffer, @object
+	.size	obuffer, 12
+obuffer:
+	.space	12
+	
+## Mensajes de error
+
+	#.rdata
+\end{lstlisting}
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{cleanBuffers.eps}	
+  \caption{Stack frame: cleanBuffers}
+  \label{fig:stack frame 1}
+\end{figure}
+
+\subsection{Código MIPS32: copyFromLexicoToOBuffer.S}
+\begin{lstlisting}
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{copyFromLexicoToOBuffer.eps}	
+  \caption{Stack frame: copyFromLexicoToOBuffer}
+  \label{fig:stack frame 2}
+\end{figure}
+
+\subsection{Código MIPS32: initializeBuffer.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{initializeBuffer.eps}	
+  \caption{Stack frame: initializeBuffer}
+  \label{fig:stack frame 3}
+\end{figure}
+
+\subsection{Código MIPS32: isKeywords.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{isKeywords.eps}	
+  \caption{Stack frame: isKeywords}
+  \label{fig:stack frame 4}
+\end{figure}
+
+\subsection{Código MIPS32: loadBufferInitial.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{loadBufferInitial.eps}	
+  \caption{Stack frame: loadBufferInitial}
+  \label{fig:stack frame 5}
+\end{figure}
+
+\subsection{Código MIPS32: loadIBufferWithIFile.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{loadIBufferWithIFile.eps}	
+  \caption{Stack frame: loadIBufferWithIFile}
+  \label{fig:stack frame 6}
+\end{figure}
+
+\subsection{Código MIPS32: loadInLexico.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{loadInLexico.eps}	
+  \caption{Stack frame: loadInLexico}
+  \label{fig:stack frame 7}
+\end{figure}
+
+\subsection{Código MIPS32: myfree.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+\subsection{Código MIPS32: mymalloc.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+%Stack frame:\
+%\begin{figure}[H]
+%  \centering
+%   \includegraphics[width=1.0\textwidth]{mymalloc.eps}	
+%  \caption{Stack frame: mymalloc}
+%  \label{fig:stack frame 9}
+%\end{figure}
+
+\subsection{Código MIPS32: myRealloc.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{myRealloc.eps}	
+  \caption{Stack frame: myRealloc}
+  \label{fig:stack frame 10}
+\end{figure}
+
+\subsection{Código MIPS32: palindrome.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{palindrome.eps}	
+  \caption{Stack frame: palindrome}
+  \label{fig:stack frame 11}
+\end{figure}
+
+\subsection{Código MIPS32: processDataInIBuffer.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.0\textwidth]{processDataInIBuffer.eps}	
+  \caption{Stack frame: processDataInIBuffer}
+  \label{fig:stack frame 12}
+\end{figure}
+
+\subsection{Código MIPS32: toLowerCase.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{toLowerCase.eps}	
+  \caption{Stack frame: toLowerCase}
+  \label{fig:stack frame 13}
+\end{figure}
+
+\subsection{Código MIPS32: verifyPalindromic.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{verifyPalindromic.eps}	
+  \caption{Stack frame: verifyPalindromic}
+  \label{fig:stack frame 14}
+\end{figure}
+
+\subsection{Código MIPS32: writeBufferInOFile.S}
+\begin{lstlisting}[language=Assembler]
+CODIGO ACA
+\end{lstlisting}
+
+Stack frame:\
+\begin{figure}[H]
+  \centering
+   \includegraphics[width=1.2\textwidth]{writeBufferInOFile.eps}	
+  \caption{Stack frame: writeBufferInOFile}
+  \label{fig:stack frame 15}
+\end{figure}
+
+\lstset{escapechar=@,style=console}
+
+\section{Ejecución}
+	
+A continuación algunos de los comandos válidos para la ejecución del programa:
+
+\noindent
+Comandos usando un archivo de entrada y otro de salida
+\begin{listing}[style=consola, numbers=none]
+$ tp1 -i input.txt -o output.txt
+\end{listing}
+\begin{listing}[style=consola, numbers=none]
+$ tp1 --input input.txt --output output.txt
+\end{listing}
+\noindent
+Comando para la salida standard
+\begin{listing}[style=consola, numbers=none]
+$ tp1 -i input.txt
+\end{listing}
+
+\noindent
+Comando para el ingreso standard
+\begin{listing}[style=consola, numbers=none]
+$ tp1 -o output.txt
+\end{listing}
+
+\noindent
+Por defecto los tamaños del buffer in y buffer out son 1 byte.
+\Se puede específicar el tamaño a usar los mismos en la llamada.
+\begin{listing}[style=consola,numbers=none]
+$ tp1 -i input.txt -o output.txt -I 10 -O 10
+\end{listing}
+-I: indica el tamaño (bytes) a usar por el buffer in
+\\
+-O: indica el tamaño (bytes) a usar por el buffer out
+
+%\end{list}
+\end{listing}
+
+\subsection{Comandos para ejecución}
+
+Desde el netBSD ejecutar:
+ 
+ 
+\noindent
+Para compilar el código
+\begin{listing}[style=consola, numbers=none]
+ $ gcc -Wall -o tp1 tp1.c *.S
+\end{listing}
+\noindent
+-Wall: activa los mensajes de warnning\newline
+-o: indica el archivo de salida.
+\newline
+
+\noindent
+Para obtener el código MIPS32 del proyecto c:
+\begin{listing}[style=consola, numbers=none]
+ $ gcc -Wall -O0 -S -mrnames tp1.c
+\end{listing}
+\noindent
+-S: detiene el compilador luego de generar el código assembly\newline -mrnames: indica al compilador que genere la salida con nombre de registros\newline -O0: indica al compilador que no aplique optimizaciones.\newline
+\subsection{Análisis sobre tiempo de ejecución}
+\\
+Comando para la medición del tiempo (time):
+\begin{listing}[style=consola, numbers=none]
+$ time ./tp1 -i ../input-large.txt -I 10 -O 10
+\end{listing}
+\\
+Se midieron y obtuvieron los tiempo transcurridos entre distintas ejecuciones cambiando los parámetros buffer in y buffer out. Para medir se usó la instrucción "time" la cual arroja los tiempos efectivamente consumidos por el CPU en la ejecución del programa.
+Adicionalmente se tomaron los tiempos con cronómetro para verificar que los tiempos arrojados por el comando time coincidas con los tomados por un instrumento físico distinto.
+
+A continuación una tabla con los valores medidos:
+\\ \\
+Tamaño de archivo usado apróximadamente 834 kB. \\
+Tamaño de línea en archivo apróximadamente: 1 byte * 450 char = 450 byte(caracteres/línea).
+\\ \\
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+id & stream input & stream output & real time[s] & user time[s] & sys time[s] & cron time[s]\\
+\hline \hline
+1 	&1	 &1&60,02&4,99&37,79&60.95 \\ \hline
+2	&2	 &2&51,14&4,01&30,00&51,38 \\ \hline
+4	&5	 &5&32,77&2,87&22,75&33,22 \\ \hline
+5	&10	 &10&27,10&2,78&20,00&27,38 \\ \hline
+6	&50	 &50&21,00&2,62&17,05&21,39 \\ \hline
+7	&100 &100&19,43&2,53&16,24&19,77 \\ \hline
+8	&300 &300&18,90&2,54&16,16&19,10 \\ \hline
+9	&600 &600&18,35&2,41&15,64&18,58 \\ \hline
+10	&1000 &1000&17,95&2,43&15,30&18.31 \\ \hline
+11	&2000 &2000&17,93&2,29&15,49&18,14 \\ \hline
+12	&3000 &3000&18,02&2,16&15,64&18,39 \\ \hline
+13	&5000 &5000&17,70&2,42&15,14&18.06 \\ \hline
+\end{tabular}
+\caption{Valores de la ejecución medidos con función time.}
+\label{tabla:sencilla}
+\end{center}
+\end{table}
+
+\begin{figure}
+  \centering
+   \includegraphics[width=0.9\textwidth]{grafo3.eps}	
+  \caption{Gráfico de incidencia del buffer}
+  \label{fig:ejemplo}
+\end{figure}
+\\
+Cómo puede verse en la figura las ejecuciones iniciales con valores bajos de lectura y escritura(buffer 1 byte) tienen tiempos de respuesta del programa elevados; mientras que a medida que se aumenta el tamaño del buffer los tiempos van creciendo hasta un limite asintótico alrededor de 7 segundos.
+\\
+Es de notar que un pequeño aumento en el tamaño del buffer(in/out) aumenta  considerablemente el tiempo de ejecución del programa.
+Los tiempos tomados por cronómetro practicamente coinciden si se toma un error de medición de +-1s; teniendo en cuenta el tiempo de reacción.
+
+Para tomar la medición a mano se uso un cronómetro electrónico de celular.
+\\
+\subsection{Comandos para ejecución de tests}
+
+\noindent
+Comando para ejecutar el test automático
+\begin{listing}[style=consola, numbers=none]
+$ bash test-automatic.sh
+\end{listing}
+
+La salida debería ser la siguiente(todos los test OK):
+
+\begin{listing}[style=consola, numbers=none]
+
+##############################################################################
+########################## Tests automaticos  ################################
+##############################################################################
+###----------###    COMIENZA test ejercicio 1 del informe.    ###----------###
+###----------###        STDIN ::: FILE OUTPUT                 ###----------###
+OK
+###----------###    FIN test ejercicio 1 del informe.         ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test ejercicio 2 del informe.    ###----------###
+###----------###        FILE INPUT ::: STDOUT                 ###----------###
+OK
+###----------###    FIN test ejercicio 2 del informe.         ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test con -i - -o -               ###----------###
+###----------###        STDIN ::: STDOUT                      ###----------###
+OK
+###----------###    FIN test con -i - -o -                    ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test palabras con acentos        ###----------###
+OK
+###----------###    FIN test palabras con acentos             ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test con caritas                 ###----------###
+OK
+###----------###    FIN test con caritas                      ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test con entrada estandar        ###----------###
+OK
+###----------###    FIN test con entrada estandar             ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###    COMIENZA test con salida estandar         ###----------###
+OK
+###----------###    FIN test con salida estandar              ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###  COMIENZA test con entrada y salida estanda  ###----------###
+OK
+###----------###  FIN test con entrada y salida estanda       ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###  COMIENZA test menu version (-V)             ###----------###
+OK
+###----------###  FIN test menu version (-V)                  ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###  COMIENZA test menu version (--version)      ###----------###
+OK
+###----------###  FIN test menu version (--version)           ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###  COMIENZA test menu help (-h)                ###----------###
+OK
+###----------###  FIN test test menu help (-h)                ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###----------###  COMIENZA test menu help (--help)            ###----------###
+OK
+###----------###  FIN test menu help (--help)                 ###----------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+###------------------------------------------------------------------------###
+##############################################################################
+########################## Tests automaticos  ################################
+##############################################################################
+#----------# COMIENZA test con /-o -i - #----------#
+OK
+
+\end{listing}
+
+\section{Conclusiones}
+
+A través del presente trabajo se logro realizar una implementación pequeña de un programa c y assembly MIPS32. La invocación desde un programa assembly a un programa c; la implementación de una función malloc, free y realloc en código assembly, sin hacer uso de la implementación c.
+La forma de llamar a funciones de
+
+Por otro lado se logró familiarizarse con la implementación de assembly MIPS y con la ABI.
+
+La implementación de la función palindroma con un buffer permitió ver que en función de la cantidad de caracteres leídos cada vez, el tiempo de ejecución del programa disminuia considerablemente. Al mismo tiempo la mejora en el tiempo de ejecución tiene un límite a partir del cual un aumento en el tamaño del buffer no garantiza ganancia en la ejecución del programa.
+
+\begin{thebibliography}{99}
+
+\bibitem{INT06} Intel Technology \& Research, ``Hyper-Threading Technology,'' 2006, http://www.intel.com/technology/hyperthread/.
+
+\bibitem{HEN00} J. L. Hennessy and D. A. Patterson, ``Computer Architecture. A Quantitative
+Approach,'' 3ra Edición, Morgan Kaufmann Publishers, 2000.
+
+\bibitem{LAR92} J. Larus and T. Ball, ``Rewriting Executable Files to Mesure Program Behavior,'' Tech. Report 1083, Univ. of Wisconsin, 1992.
+
+https://es.wikipedia.org/wiki/Pal%C3%ADndromo
+
+\end{thebibliography}
+
+
+\end{document}
