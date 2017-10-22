@@ -9,6 +9,7 @@
 #define BYTES_MENSAJE_ERROR_LECTURA_ARCHIVO     60
 #define BYTES_MENSAJE_ERROR_ESCRITURA_ARCHIVO   51
 #define BYTES_MENSAJE_ERROR_MEMORIA_OBUFFER	60
+#define BYTES_MENSAJE_ERROR_MEMORIA_BUFFER	59
 
 ##-----	initializeInput -----##
 
@@ -786,7 +787,7 @@ loadInBuffer:
 	lw	v0,60($fp)      # Cargo en v0 la direccion de buffer.
 	lw	v0,0(v0)        # Cargo en v0 el contenido en esa direccion de memoria, que
                                 # que seria buffer->buffer.
-	bne	v0,$zero,compareQuantities # If (buffer->buffer != NULL) goto compareQuantities.
+	bne	v0,zero,compareQuantities # If (buffer->buffer != NULL) goto compareQuantities.
 
         # buffer->buffer is NULL
 
@@ -829,62 +830,142 @@ compareQuantities:
         # buffer->sizeBytes = bytesLexicoPreview * 2;
 	lw	v1,60($fp)     # Cargo en v1 la direccion de buffer.
 	lw	v0,28($fp)     # Cargo en v0 bytesLexicoPreview.
-	sll	v0,v0,1
-	sw	v0,8(v1)
-	lw	v0,60($fp)
-	lw	v1,60($fp)
-	lw	a0,0(v0)
-	lw	a1,8(v1)
-	lw	a2,28($fp)
+	sll	v0,v0,1        # bytesLexicoPreview * 2 y guardo resultado en v0.
+                               # 1 porque 2 elevado a 1 es igual a 2.
+	sw	v0,8(v1)       # Guardo el resultado de la multiplicacion en buffer->sizeBytes.
+
+        # char * auxiliary = myRealloc(buffer->buffer, buffer->sizeBytes*sizeof(char), bytesLexicoPreview);
+	lw	v0,60($fp)     # Cargo en v0 la direccion de buffer
+	lw	v1,60($fp)     # Cargo en v1 la direccion de buffer
+	lw	a0,0(v0)       # Cargo en a0 buffer->buffer. Parametro para myRealloc.
+	lw	a1,8(v1)       # Cargo en a1 buffer->sizeBytes. Parametro para myRealloc. 
+	lw	a2,28($fp)     # Cargo en a2 bytesLexicoPreview. Parametro para myRealloc.
 	la	t9,myRealloc
-	jal	ra,t9
-	sw	v0,32($fp)
-	lw	v0,32($fp)
-	bne	v0,$zero,$L56
-	lw	a0,60($fp)
+	jal	ra,t9          # Ejecuto la funcion myRealloc.
+	sw	v0,32($fp)     # Guardo en la direccion 32($fp) la memoria reservada.
+
+        # (auxiliary == NULL) ?
+	lw	v0,32($fp)     # Cargo en v0 la memoria reservada.
+	bne	v0,zero,memoryAllocation # If (auxiliary != NULL) goto memoryAllocation.
+
+        # Hubo problemas con la reasignacion de memoria.
+	lw	a0,60($fp)     # Cargo en a0 buffer. Parametro de la funcion cleanContentBuffer.
 	la	t9,cleanContentBuffer
-	jal	ra,t9
+	jal	ra,t9          # Ejecuto la funcion cleanContentBuffer para liberar memoria.
+
 	b	verifyMemory
-$L56:
+memoryAllocation:
+        # buffer->buffer = auxiliary;
 	lw	v1,60($fp)
 	lw	v0,32($fp)
 	sw	v0,0(v1)
 verifyMemory:
+        # (buffer->buffer == NULL) ?
 	lw	v0,60($fp)
 	lw	v0,0(v0)
-	bne	v0,$zero,$L58
-	la	a0,__sF+176
-	la	a1,$LC4
-	la	t9,fprintf
-	jal	ra,t9
-	li	v0,5			# 0x5
-	sw	v0,36($fp)
-	b	$L52
-$L58:
+	bne	v0,zero,loadCharacterInBuffer # If (buffer->buffer != NULL) goto loadCharacterInBuffer
+
+        # buffer->buffer is NULL => Mensaje de error
+	li      a0,FILE_DESCRIPTOR_STDERR # Cargo en a0 FILE_DESCRIPTOR_STDERR.
+	la      a1,MENSAJE_ERROR_MEMORIA_BUFFER # Cargo en a1 la direccion de memoria donde se encuentra el mensaje a cargar.
+	li      a2,BYTES_MENSAJE_ERROR_MEMORIA_BUFFER # Cargo en a2 la cantidad de bytes a escribir.
+	li      v0, SYS_write
+	syscall   # No controlo error porque sale de por si de la funcion por error.
+	
+        # return ERROR_MEMORY;
+	li	v0,ERROR_MEMORY
+	sw	v0,36($fp)      # Guardo en la direccion 36($fp) el codigo de error, 
+                                # resultado de la funcion.
+	b	returnLoadInBuffer
+loadCharacterInBuffer:
+        # buffer->buffer[buffer->quantityCharactersInBuffer] = character;
 	lw	v0,60($fp)
 	lw	v1,60($fp)
-	lw	a0,0(v0)
-	lw	v0,4(v1)
-	addu	v1,a0,v0
-	lbu	v0,24($fp)
-	sb	v0,0(v1)
+	lw	a0,0(v0)       # Cargo en a0 buffer->buffer
+	lw	v0,4(v1)       # Cargo en v0 buffer->quantityCharactersInBuffer
+	addu	v1,a0,v0       # Corrimiento sobre buffer->buffer. Guardo en v1
+	lbu	v0,24($fp)     # Carga character en v0
+	sb	v0,0(v1)       # Asigno character a esa direccion de memoria.
+
+        # buffer->quantityCharactersInBuffer ++;
 	lw	v1,60($fp)
 	lw	v0,60($fp)
 	lw	v0,4(v0)
 	addu	v0,v0,1
 	sw	v0,4(v1)
-	sw	$zero,36($fp)
-$L52:
+
+        # return OKEY;
+	sw	zero,36($fp)    # OKEY = 0
+returnLoadInBuffer:
 	lw	v0,36($fp)
 	move	sp,$fp
 	lw	ra,52(sp)
 	lw	$fp,48(sp)
 	lw	s0,40(sp)
+        # destruyo stack frame
 	addu	sp,sp,56
+        # vuelvo a funcion llamante
 	j	ra
+
 	.end	loadInBuffer
 
 
+##-----	cleanContentBuffer -----##
+
+        .align	2
+	.globl	cleanContentBuffer
+	.ent	cleanContentBuffer
+cleanContentBuffer:
+	.frame	$fp,40,ra
+	.set	noreorder
+	.cpload	t9
+	.set	reorder
+
+	subu	sp,sp,40
+
+	.cprestore 16
+	sw	ra,32(sp)
+	sw	$fp,28(sp)
+	sw	gp,24(sp)
+
+	move	$fp,sp
+
+        # Parametro
+	sw	a0,40($fp)      # Guardo en la direccion 40($fp) el parametro * buffer (Buffer * buffer).
+
+        # (buffer->buffer != NULL) ?
+	lw	v0,40($fp)	
+	lw	v0,0(v0)        # Cargo en v0 buffer -> buffer
+	beq	v0,zero,cleanQuantities # If (buffer->buffer == NULL) goto cleanQuantities
+
+        # buffer->buffer is not NULL
+
+        # free(buffer->buffer);		
+	lw	v0,40($fp)
+	lw	a0,0(v0)
+	la	t9,myfree
+	jal	ra,t9
+
+        # buffer->buffer = NULL;
+	lw	v0,40($fp)
+	sw	zero,0(v0)
+cleanQuantities:
+        # buffer->quantityCharactersInBuffer = 0;
+	lw	v0,40($fp)
+	sw	zero,4(v0)
+
+        # buffer->sizeBytes = 0;
+	lw	v0,40($fp)
+	sw	zero,8(v0)
+
+	move	sp,$fp
+	lw	ra,32(sp)
+	lw	$fp,28(sp)
+        # destruyo stack frame
+	addu	sp,sp,40
+        # vuelvo a funcion llamante
+	j	ra
+	.end	cleanContentBuffer
 
 
 # ---------------------------------------------------------------------------- #
@@ -980,6 +1061,11 @@ MENSAJE_ERROR_ESCRITURA_ARCHIVO:
 MENSAJE_ERROR_MEMORIA_OBUFFER:
 	.ascii	"[Error] Hubo un error de asignacion de memoria (obuffer)"
 	.ascii	". \n\000"
+
+MENSAJE_ERROR_MEMORIA_BUFFER:
+	.ascii	"[Error] Hubo un error de asignacion de memoria (buffer)"
+	.ascii	". \n\000"
+
 
 
 
