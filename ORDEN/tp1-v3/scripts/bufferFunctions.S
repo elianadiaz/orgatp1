@@ -2,7 +2,6 @@
 #include <sys/syscall.h>
 
 #include "constants.h"
-##include "memoryFunctions.h"
 
 # Size mensajes
 #define BYTES_MENSAJE_ERROR_MEMORIA_IBUFFER     60
@@ -995,7 +994,7 @@ cleanQuantities:
 	## Variables para la parte de input
 
 	.globl	ifd
-#	.section	.bss   #TODO DESPUES VER SI ESTO SE PUEDE ELIMINAR
+#	.section	.bss
 	.align	2
 	.type	ifd, @object
 	.size	ifd, 4
@@ -1009,8 +1008,7 @@ ifd:
 lastPositionInIBufferRead:
 	.word	-1
 
-	.globl	ibuffer	
-#	.section	.bss  TODO VER SI ANDA BIEN Y SACARLO
+	.globl	ibuffer
 	.align	2
 	.type	ibuffer, @object
 	.size	ibuffer, 12

@@ -2,8 +2,6 @@
 #include <sys/syscall.h>
 
 #include "constants.h"
-##include "bufferFunctions.h"
-##include "memoryFunctions.h"
 
 # Size mensajes
 #define BYTES_MENSAJE_ERROR_PUTCH   65
