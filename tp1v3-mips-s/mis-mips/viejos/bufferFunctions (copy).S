@@ -18,41 +18,41 @@
         .globl  initializeInput
         .ent    initializeInput
 initializeInput:
-        .frame  $fp,4,ra
+        .frame  $fp,16,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,8
+        subu    sp,sp,16
 
-        .cprestore 8
-        sw      $fp,4(sp)
-        sw      gp,0(sp)
+        .cprestore 0
+        sw      $fp,12(sp)
+        sw      gp,8(sp)
 	
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
 
         # Parametros
-        sw      a0,8($fp)      # Guardo en la direccion de memoria 8($fp) la 
+        sw      a0,16($fp)      # Guardo en la direccion de memoria 16($fp) la 
                                 # variable iFileDescriptor (int).
-        sw      a1,12($fp)      # Guardo en la direccion de memoria 12($fp) la 
+        sw      a1,20($fp)      # Guardo en la direccion de memoria 20($fp) la 
                                 # variable ibytes (size_t).
 
         # ifd = iFileDescriptor;
-        lw      v0,8($fp)      # Cargo en v0 iFileDescriptor.
+        lw      v0,16($fp)      # Cargo en v0 iFileDescriptor.
         sw      v0,ifd          # Guardo el contenido de v0, iFileDescriptor, en 
                                 # la variable ifd.
 
         # ibuffer.sizeBytes = ibytes;
-        lw      v0,12($fp)      # Cargo en v0 ibytes.
+        lw      v0,20($fp)      # Cargo en v0 ibytes.
         sw      v0,ibuffer+8    # Guardo en sizeBytes (ibuffer+8) el contenido 
                                 # de v0 (ibytes).
 
         move    sp,$fp
-        lw      $fp,4(sp)
+        lw      $fp,12(sp)
         # destruyo stack frame
-        addu    sp,sp,8
+        addu    sp,sp,16
         # vuelvo a funcion llamante
         j       ra
 
@@ -66,41 +66,41 @@ initializeInput:
         .globl  initializeOutput
         .ent    initializeOutput
 initializeOutput:
-        .frame  $fp,4,ra
+        .frame  $fp,16,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,8
+        subu    sp,sp,16
 
-        .cprestore 8
-        sw      $fp,4(sp)
-        sw      gp,0(sp)
+        .cprestore 0
+        sw      $fp,12(sp)
+        sw      gp,8(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
 
         # Parametros
-        sw      a0,8($fp)       # Guardo en la direccion de memoria 8($fp) la 
+        sw      a0,16($fp)      # Guardo en la direccion de memoria 16($fp) la 
                                 # variable oFileDescriptor (int).
-        sw      a1,12($fp)      # Guardo en la direccion de memoria 12($fp) la 
+        sw      a1,20($fp)      # Guardo en la direccion de memoria 20($fp) la 
                                 # variable obytes (size_t).
 
         # ofd = oFileDescriptor;
-        lw      v0,8($fp)       # Cargo en v0 oFileDescriptor.
+        lw      v0,16($fp)      # Cargo en v0 oFileDescriptor.
         sw      v0,ofd          # Guardo el contenido de v0, oFileDescriptor, en 
                                 # la variable ofd.
 
         # obuffer.sizeBytes = obytes;
-        lw      v0,12($fp)      # Cargo en v0 obytes.
+        lw      v0,20($fp)      # Cargo en v0 obytes.
         sw      v0,obuffer+8    # Guardo en sizeBytes (obuffer+8) el contenido 
                                 # de v0 (obytes).
 
         move    sp,$fp
-        lw      $fp,4(sp)
+        lw      $fp,12(sp)
         # destruyo stack frame
-        addu    sp,sp,8
+        addu    sp,sp,16
         # vuelvo a funcion llamante
         j       ra
 
@@ -114,18 +114,18 @@ initializeOutput:
         .globl  loadIBufferWithIFile
         .ent    loadIBufferWithIFile
 loadIBufferWithIFile:
-        .frame  $fp,36,ra
+        .frame  $fp,56,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,48
+        subu    sp,sp,56
 
         .cprestore 16
-        sw      ra,40(sp)
-        sw      $fp,36(sp)
-        sw      gp,32(sp)
+        sw      ra,48(sp)
+        sw      $fp,44(sp)
+        sw      gp,40(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
@@ -154,14 +154,14 @@ loadIBufferWithIFile:
         li      v0, SYS_write
         syscall   # No controlo error porque sale de por si de la funcion por error.
         li      v0,ERROR_MEMORY
-        sw      v0,28($fp)      # Guardo en la direccion de memoria 28($fp) el codigo de error.
+        sw      v0,36($fp)      # Guardo en la direccion de memoria 36($fp) el codigo de error.
                                 # Es el resultado de la funcion loadIBufferWithFile.
         b       returnLoadIBufferWithFile # Salto incodicional al return de la funcion.
 ibufferNotNull:
         # ibuffer.buffer is not NULL
 
         # int completeDelivery = FALSE;
-        sw      zero,16($fp)    # Guardo en la direccion de memoria 16($fp) la variable 
+        sw      zero,24($fp)    # Guardo en la direccion de memoria 24($fp) la variable 
                                 # completeDelivery, inicializada en FALSE (= 0).
 
         # ibuffer.quantityCharactersInBuffer = 0;
@@ -171,7 +171,7 @@ ibufferNotNull:
         # int bytesToRead = ibuffer.sizeBytes;
         lw      v0,ibuffer+8    # Cargo en v0 el valor de sizeBytes.
                                 # sizeBytes es el tercer elemento del struct Buffer (Buffer ibuffer).
-        sw      v0,20($fp)      # Guardo en la direccion 20($fp) el valor de sizeBytes, que representaria
+        sw      v0,28($fp)      # Guardo en la direccion 28($fp) el valor de sizeBytes, que representaria
                                 # a la variable bytesToRead.
 
         # Lleno el buffer de entrada
@@ -179,8 +179,8 @@ whileLoadIBuffer:
         # (completeDelivery == FALSE && endIFile == FALSE) ?
 
         # (completeDelivery == FALSE) ?	
-        lw      v0,16($fp)      # Cargo en v0 la variable completeDelivery, guardada 
-                                # en la direccion 16($fp).
+        lw      v0,24($fp)      # Cargo en v0 la variable completeDelivery, guardada 
+                                # en la direccion 24($fp).
 	bne     v0,FALSE,initializeLastPositionInIBufferRead # If (completeDelivery != FALSE) 
                                                     # goto initializeLastPositionInIBufferRead
 
@@ -203,7 +203,7 @@ whileLoadIBuffer:
         lw      a0,ifd          # Cargo en a0 ifd, parametro de la funcion read.
         move    a1,v0           # Cargo la direccion de memoria que estaba en v0 en a1. Parametro
                                 # de la funcion read.
-        lw      a2,20($fp)      # Cargo en a2 bytesToRead que estaba en la direccion 20($fp).
+        lw      a2,28($fp)      # Cargo en a2 bytesToRead que estaba en la direccion 28($fp).
         li      v0, SYS_read
         syscall     # Seria read: int bytesRead = read(ifd, ibuffer.buffer + 
                     #               ibuffer.quantityCharactersInBuffer, bytesToRead);
@@ -223,16 +223,16 @@ whileLoadIBuffer:
         syscall  # No controlo error porque sale de por si de la funcion por error.
 
         li     v0,ERROR_I_READ
-        sw     v0,28($fp)       # Guardo en la direccion de memoria 28($fp) el codigo de error.
+        sw     v0,36($fp)       # Guardo en la direccion de memoria 36($fp) el codigo de error.
                                 # Es el resultado de la funcion loadIBufferWithFile.
         b       returnLoadIBufferWithFile # Salto incodicional al return de la funcion.
 
 savedBytesRead:
-        sw      v0,24($fp)      # Guardo en la direccion de memoria 24($fd) el resultado de la 
+        sw      v0,32($fp)      # Guardo en la direccion de memoria 40($fd) el resultado de la 
                                 # funcion read, que estaria representado por la variable bytesRead.
 
         # (bytesRead == 0) ?      
-        lw      v0,24($fp)      # Cargo en v0 lo que esta en la direccion 24($fp), que seria bytesRead.
+        lw      v0,32($fp)      # Cargo en v0 lo que esta en la direccion 32($fp), que seria bytesRead.
         bne     v0,zero,loadBytesRead # If (bytesRead != 0) goto loadBytesRead.
 
         # bytesRead is 0
@@ -244,7 +244,7 @@ loadBytesRead:
         # ibuffer.quantityCharactersInBuffer += bytesRead;
         lw      v1,ibuffer+4    # Cargo en v1 ibuffer.quantityCharactersInBuffer (segundo
                                 # elemento del struct Buffer).
-        lw      v0,24($fp)      # Cargo en v0 los bytes leidos (bytesRead).
+        lw      v0,32($fp)      # Cargo en v0 los bytes leidos (bytesRead).
         addu    v0,v1,v0        # Guardo el resultado de la suma en v0: 
                                 # quantityCharactersInBuffer + bytesRead.
         sw      v0,ibuffer+4    # Guardo el resultado de la suma en ibuffer.quantityCharactersInBuffer.
@@ -254,18 +254,18 @@ loadBytesRead:
         lw      v0,ibuffer+4    # Cargo en v0 ibuffer.quantityCharactersInBuffer.
         subu    v0,v1,v0        # Guardo el resultado de la suma en v0: 
                                 # ibuffer.sizeBytes - ibuffer.quantityCharactersInBuffer
-        sw      v0,20($fp)      # Guardo el resultado de la suma en la direccion 20($fp), que
+        sw      v0,28($fp)      # Guardo el resultado de la suma en la direccion 28($fp), que
                                 # representa la variable bytesToRead.
 
         # (bytesToRead <= 0) ?
-        lw      v0,20($fp)      # Cargo en v0 bytesToRead.
+        lw      v0,28($fp)      # Cargo en v0 bytesToRead.
         bgtz    v0,whileLoadIBuffer # If (bytesToRead > 0) goto whileLoadIBuffer
 	
         # bytesToRead is <= 0
 
         # completeDelivery = TRUE;
         li      v0,TRUE
-        sw      v0,16($fp)      # Guardo TRUE en la direccion 16($fp), que 
+        sw      v0,24($fp)      # Guardo TRUE en la direccion 24($fp), que 
                                 # representa la variable completeDelivery.
         b       whileLoadIBuffer # Vuelvo a intentar entrar al loop.
 initializeLastPositionInIBufferRead:
@@ -275,14 +275,14 @@ initializeLastPositionInIBufferRead:
         
         # return OKEY_I_FILE;
         li      v0,OKEY_I_FILE
-        sw      v0,28($fp)
+        sw      v0,36($fp)
 returnLoadIBufferWithFile:
-        lw      v0,28($fp)
+        lw      v0,36($fp)
         move    sp,$fp
-        lw      ra,40(sp)
-        lw      $fp,36(sp)
+        lw      ra,48(sp)
+        lw      $fp,44(sp)
         # destruyo stack frame
-        addu    sp,sp,48
+        addu    sp,sp,56
         # vuelvo a funcion llamante
         j       ra
 
@@ -296,18 +296,18 @@ returnLoadIBufferWithFile:
         .globl  getch
         .ent    getch
 getch:
-        .frame  $fp,28,ra
+        .frame  $fp,48,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,40
+        subu    sp,sp,48
 
         .cprestore 16
-        sw      ra,32(sp)
-        sw      $fp,28(sp)
-        sw      gp,24(sp)
+        sw      ra,40(sp)
+        sw      $fp,36(sp)
+        sw      gp,32(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
@@ -336,24 +336,24 @@ verifyEndIFile:
 
         # endIFile is TRUE
         li      v0,EOF_F        # EOF_F = -1
-        sw      v0,20($fp)      # Guardo en la direccion 20($fp) el resultado de la funcion.
+        sw      v0,28($fp)      # Guardo en la direccion 28($fp) el resultado de la funcion.
         b       returnGetch     # Salto incondicional al return de la funcion.
 loadIBuffer:
         # int resultLoadIBuffer = loadIBufferWithIFile();
         la      t9,loadIBufferWithIFile
         jal     ra,t9           # Ejecuto la funcion loadIBufferWithIFile
-        sw      v0,16($fp)      # Guardo el resultado de la funcion en la direccion 16($fp),
+        sw      v0,24($fp)      # Guardo el resultado de la funcion en la direccion 24($fp),
                                 # que representaria la variable resultLoadIBuffer.
 
         # (resultLoadIBuffer == ERROR_I_READ) ?
-        lw      v1,16($fp)      # Cargo en v1 la variable de resultLoadIBuffer.
+        lw      v1,24($fp)      # Cargo en v1 la variable de resultLoadIBuffer.
         li      v0,ERROR_I_READ
         bne     v1,v0,verifyQuantityCharactersInBuffer # If (resultLoadIBuffer != ERROR_I_READ) 
                                                        # goto verifyQuantityCharactersInBuffer
 
         # return ERROR_I_READ;
         li      v0,ERROR_I_READ
-        sw      v0,20($fp)
+        sw      v0,28($fp)
         b       returnGetch
 verifyQuantityCharactersInBuffer:
         # (ibuffer.quantityCharactersInBuffer == 0) ?
@@ -364,7 +364,7 @@ verifyQuantityCharactersInBuffer:
 
         # return EOF_F;
         li      v0,EOF_F         # EOF_F = -1
-        sw      v0,20($fp)
+        sw      v0,28($fp)
         b       returnGetch
 increaseLastPositionInIBufferRead:
         # lastPositionInIBufferRead ++;
@@ -377,14 +377,14 @@ increaseLastPositionInIBufferRead:
         lw      v0,lastPositionInIBufferRead
         addu    v0,v1,v0
         lb      v0,0(v0)
-        sw      v0,20($fp)
+        sw      v0,28($fp)
 returnGetch:
-        lw      v0,20($fp)
+        lw      v0,28($fp)
         move    sp,$fp
-        lw      ra,32(sp)
-        lw      $fp,28(sp)
+        lw      ra,40(sp)
+        lw      $fp,36(sp)
         # destruyo stack frame
-        addu    sp,sp,40
+        addu    sp,sp,48
         # vuelvo a funcion llamante
         j       ra
 
@@ -398,18 +398,18 @@ returnGetch:
         .globl  writeBufferInOFile
         .ent    writeBufferInOFile
 writeBufferInOFile:
-        .frame  $fp,44,ra
+        .frame  $fp,64,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,56
+        subu    sp,sp,64
 
         .cprestore 16
-        sw      ra,48(sp)
-        sw      $fp,44(sp)
-        sw      gp,40(sp)
+        sw      ra,56(sp)
+        sw      $fp,52(sp)
+        sw      gp,48(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
@@ -431,23 +431,23 @@ writeBufferInOFile:
         b       loadOBuffer     # Salto incondicional a loadOBuffer.
 returnOkey:
         # return OKEY;
-        sw      zero,32($fp)    # Guardo en la direccion 32($fp) el resultado de la
+        sw      zero,40($fp)    # Guardo en la direccion 40($fp) el resultado de la
                                 # funcion, en este caso OKEY (= 0).
         b       returnWriteBufferInOFile # Salto incondicional al return de la funcion.
 loadOBuffer:
         # int completeDelivery = FALSE (= 0)
-        sw      zero,16($fp)   # 16($fp) <-> completeDelivery
+        sw      zero,24($fp)   # 24($fp) <-> completeDelivery
 
         # int bytesWriteAcum = 0;
-        sw      zero,20($fp)    # 20($fp) <-> bytesWriteAcum
+        sw      zero,28($fp)    # 28($fp) <-> bytesWriteAcum
 
         # int bytesToWrite = obuffer.quantityCharactersInBuffer;
         lw      v0,obuffer+4   # quantityCharactersInBuffer es el segundo elemento del
                                # struct Buffer.
-	sw	v0,24($fp)     # 24($fp) <-> bytesToWrite
+	sw	v0,32($fp)     # 32($fp) <-> bytesToWrite
 whileWriteOFile:
         # (completeDelivery == FALSE) ?
-        lw      v0,16($fp)     # Cargo en v0 completeDelivery
+        lw      v0,24($fp)     # Cargo en v0 completeDelivery
         beq     v0,FALSE,inWhileWriteOFile  # If (completeDelivery == FALSE) goto inWhileWriteOFile
 
         # completeDelivery is not FALSE (is TRUE)
@@ -457,13 +457,13 @@ inWhileWriteOFile:
 
         # obuffer.buffer + bytesWriteAcum
         lw      v1,obuffer     # obuffer.buffer es el primer elemento del struct Buffer.
-        lw      v0,20($fp)     # Cargo en v0 bytesWriteAcum.
+        lw      v0,28($fp)     # Cargo en v0 bytesWriteAcum.
         addu    v0,v1,v0       # Me muevo por buffer, guardo la direccion en v0.
 
         lw      a0,ofd         # Cargo en a0 ofd. Parametro de la funcion write.
         move    a1,v0          # Cargo en a1 la direccion sobre obuffer.buffer.
                                # Parametro de la funcion write.
-        lw      a2,24($fp)     # Cargo en a2 bytesToWrite. Parametro de la funcion write.
+        lw      a2,32($fp)     # Cargo en a2 bytesToWrite. Parametro de la funcion write.
 
         li      v0, SYS_write
         syscall  # Seria int bytesWrite = write(ofd, obuffer.buffer + bytesWriteAcum, bytesToWrite);
@@ -479,41 +479,41 @@ inWhileWriteOFile:
 
         # return ERROR_WRITE;
         li      v0,ERROR_WRITE  # Cargo codigo de error, que sera el resultado de la funcion.
-        sw      v0,32($fp)      # Guardo en la direccion 32($fp) el resultado de la funcion.
+        sw      v0,40($fp)      # Guardo en la direccion 40($fp) el resultado de la funcion.
         b       returnWriteBufferInOFile
 saveBytesWrite:
-        sw      v0,28($fp)     # Guardo en la direccion 28($fp) los bytes escritor,
+        sw      v0,36($fp)     # Guardo en la direccion 36($fp) los bytes escritor,
                                 # que representarian la variable bytesWrite.
         # bytesWriteAcum += bytesWrite;
-        lw      v1,20($fp)      # 20($fp) <-> bytesWriteAcum. Cargo en v1 bytesWriteAcum
-        lw      v0,28($fp)      # Cargo en v0 bytesWrite.
+        lw      v1,28($fp)      # 28($fp) <-> bytesWriteAcum. Cargo en v1 bytesWriteAcum
+        lw      v0,36($fp)      # Cargo en v0 bytesWrite.
         addu    v0,v1,v0        # Sumo estos dos valores y guardo resultado en v0.
-        sw      v0,20($fp)      # Guardo en bytesWriteAcum su nuevo valor (resultado de la suma).
+        sw      v0,28($fp)      # Guardo en bytesWriteAcum su nuevo valor (resultado de la suma).
 
         # bytesToWrite = obuffer.quantityCharactersInBuffer - bytesWriteAcum;
         lw      v1,obuffer+4    # obuffer.quantityCharactersInBuffer es el segundo elemento
                                 # del struct Buffer. Cargo este valor en v1.
-        lw      v0,20($fp)      # Cargo en v0 bytesWriteAcum.
+        lw      v0,28($fp)      # Cargo en v0 bytesWriteAcum.
         subu    v0,v1,v0        # Resto estos dos valores. Guardo resultado en v0.
-        sw      v0,24($fp)      # Asigno a bytesToWrite el resultado de la resta.
+        sw      v0,32($fp)      # Asigno a bytesToWrite el resultado de la resta.
 
         # (bytesToWrite <= 0) ?
-        lw      v0,24($fp)     # Cargo en v0 bytesToWrite
+        lw      v0,32($fp)     # Cargo en v0 bytesToWrite
         bgtz    v0,whileWriteOFile # If (bytesToWrite > 0) goto whileWriteOFile
 
         # bytesToWrite is <= 0
         li      v0,TRUE
-        sw      v0,16($fp)     # Asigno a completeDelivery TRUE
+        sw      v0,24($fp)     # Asigno a completeDelivery TRUE
         b       whileWriteOFile
 loadReturnOkey:
-        sw      zero,32($fp)   # OKEY = 0
+        sw      zero,40($fp)   # OKEY = 0
 returnWriteBufferInOFile:
-        lw      v0,32($fp)
+        lw      v0,40($fp)
         move    sp,$fp
-        lw      ra,48(sp)
-        lw      $fp,44(sp)
+        lw      ra,56(sp)
+        lw      $fp,52(sp)
         # destruyo stack frame
-        addu    sp,sp,56
+        addu    sp,sp,64
         # vuelvo a funcion llamante
         j       ra
 
@@ -527,24 +527,24 @@ returnWriteBufferInOFile:
         .globl  putch
         .ent    putch
 putch:
-        .frame  $fp,28,ra
+        .frame  $fp,48,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,40
+        subu    sp,sp,48
 
        .cprestore 16
-        sw      ra,32(sp)
-        sw      $fp,28(sp)
-        sw      gp,24(sp)
+        sw      ra,40(sp)
+        sw      $fp,36(sp)
+        sw      gp,32(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
 
         # Parametro
-        sw      a0,40($fp)      # Guardo en la direccion de memoria 40($fp) lo que tiene a0, que
+        sw      a0,48($fp)      # Guardo en la direccion de memoria 48($fp) lo que tiene a0, que
                                 # es el parametro que recibe la funcion, int character.
 
         # (obuffer.buffer == NULL) ?
@@ -576,7 +576,7 @@ putch:
 
         # return ERROR_MEMORY;
         li      v0,ERROR_MEMORY
-        sw      v0,16($fp)      # Cargo en la direccion 16($fp) el resultado de la funcion,
+        sw      v0,24($fp)      # Cargo en la direccion 24($fp) el resultado de la funcion,
                                 # en este caso es el codigo de error ERROR_MEMORY.
         b       returnPutch     # Salto incondicional a returnPutch.
 initializeQuantityCharactersInOBuffer:
@@ -589,7 +589,7 @@ loadInOBuffer:
         addu    v1,v1,v0        # Me muevo sobre obuffer.buffer, o sea: 
                                 # obuffer.buffer[obuffer.quantityCharactersInBuffer]
                                 # Guardo esta direccion en v1.
-        lbu     v0,40($fp)      # Cargo en v0 character.
+        lbu     v0,48($fp)      # Cargo en v0 character.
         sb      v0,0(v1)        # Asigno character a obuffer.buffer[obuffer.quantityCharactersInBuffer].
 
         # obuffer.quantityCharactersInBuffer ++;
@@ -613,14 +613,14 @@ loadInOBuffer:
         sw      zero,obuffer+4
 loadReturnPutch:
         # return OKEY;
-        sw      zero,16($fp)
+        sw      zero,24($fp)
 returnPutch:
-        lw      v0,16($fp)
+        lw      v0,24($fp)
         move    sp,$fp
-        lw      ra,32(sp)
-        lw      $fp,28(sp)
+        lw      ra,40(sp)
+        lw      $fp,36(sp)
         # destruyo stack frame
-        addu    sp,sp,40
+        addu    sp,sp,48
         # vuelvo a funcion llamante
         j       ra
 
@@ -634,18 +634,18 @@ returnPutch:
         .globl  flush
         .ent    flush
 flush:
-        .frame  $fp,28,ra
+        .frame  $fp,48,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,40
+        subu    sp,sp,48
 
         .cprestore 16
-        sw      ra,32(sp)
-        sw      $fp,28(sp)
-        sw      gp,24(sp)
+        sw      ra,40(sp)
+        sw      $fp,36(sp)
+        sw      gp,32(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
@@ -669,19 +669,19 @@ flush:
         # return writeBufferInOFile();
         la      t9,writeBufferInOFile
         jal     ra,t9
-        sw      v0,16($fp)    # Cargo en la direccion 24($fp) el resultado de ejecutar 
+        sw      v0,24($fp)    # Cargo en la direccion 24($fp) el resultado de ejecutar 
                               # la funcion writeBufferInOFile.
         b       returnFlush
 loadReturnOkeyFlush:
         # return OKEY;
-        sw      zero,16($fp)  # OKEY = 0
+        sw      zero,24($fp)  # OKEY = 0
 returnFlush:
-        lw      v0,16($fp)
+        lw      v0,24($fp)
         move    sp,$fp
-        lw      ra,32(sp)
-        lw      $fp,28(sp)
+        lw      ra,40(sp)
+        lw      $fp,36(sp)
         # destruyo stack frame
-        addu    sp,sp,40
+        addu    sp,sp,48
         # vuelvo a funcion llamante
         j       ra
 
@@ -695,18 +695,18 @@ returnFlush:
         .globl  freeResources
         .ent    freeResources
 freeResources:
-        .frame  $fp,20,ra
+        .frame  $fp,40,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,32
+        subu    sp,sp,40
 
         .cprestore 16
-        sw      ra,24(sp)
-        sw      $fp,20(sp)
-        sw      gp,16(sp)
+        sw      ra,32(sp)
+        sw      $fp,28(sp)
+        sw      gp,24(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
@@ -742,10 +742,10 @@ freeOBufferBuffer:
         sw      zero,obuffer
 returnFreeResources:
         move    sp,$fp
-        lw      ra,24(sp)
-        lw      $fp,20(sp)
+        lw      ra,32(sp)
+        lw      $fp,28(sp)
         # destruyo stack frame
-        addu    sp,sp,32
+        addu    sp,sp,40
         # vuelvo a funcion llamante
         j       ra
 
@@ -759,33 +759,32 @@ returnFreeResources:
         .globl  loadInBuffer
         .ent    loadInBuffer
 loadInBuffer:
-        .frame  $fp,40,ra
+        .frame  $fp,56,ra
         .set    noreorder
         .cpload t9
         .set    reorder
 
         # Stack frame creation
-        subu    sp,sp,48
+        subu    sp,sp,56
 
-        .cprestore 12
-        sw      ra,44(sp)
-        sw      $fp,40(sp)
-        sw      gp,36(sp)
-
-        sw      s0,32(sp)
+        .cprestore 16
+        sw      ra,52(sp)
+        sw      $fp,48(sp)
+        sw      gp,44(sp)
+        sw      s0,40(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
         move    $fp,sp
 
         move    v0,a0           # Cargo en v0 lo que viene en a0, que es character (char).
-	sw	a1,48($fp)      # Cargo en la direccion 48($fp) lo que viene en a1, que 
+	sw	a1,60($fp)      # Cargo en la direccion 60($fp) lo que viene en a1, que 
                                 # es * buffer (Buffer * buffer).
-	sw	a2,52($fp)      # Cargo en 52($fp) lo que viene en a2, que es sizeInitial (size_t).
-	sb	v0,16($fp)      # Guardo en la direccion 16($fp) lo que estaba en v0, que era
+	sw	a2,64($fp)      # Cargo en 64($fp) lo que viene en a2, que es sizeInitial (size_t).
+	sb	v0,24($fp)      # Guardo en la direccion 24($fp) lo que estaba en v0, que era
                                 # el parametro character.
 
         # (buffer->buffer == NULL) ?
-	lw	v0,48($fp)      # Cargo en v0 la direccion de buffer.
+	lw	v0,60($fp)      # Cargo en v0 la direccion de buffer.
 	lw	v0,0(v0)        # Cargo en v0 el contenido en esa direccion de memoria, que
                                 # que seria buffer->buffer.
 	bne	v0,zero,compareQuantities # If (buffer->buffer != NULL) goto compareQuantities.
@@ -793,23 +792,23 @@ loadInBuffer:
         # buffer->buffer is NULL
 
         # buffer->buffer = malloc(sizeInitial * sizeof(char));
-	lw	s0,48($fp)      # Cargo en s0 la direccion de buffer.
-	lw	a0,52($fp)      # Cargo en a0 sizeInitial, parametro para mymalloc.
+	lw	s0,60($fp)      # Cargo en s0 la direccion de buffer.
+	lw	a0,64($fp)      # Cargo en a0 sizeInitial, parametro para mymalloc.
 	la	t9,mymalloc
 	jal	ra,t9           # Ejecuto mymalloc.
 	sw	v0,0(s0)        # Asigno la memoria a lo que apunta buffer (buffer -> buffer).
                                 # La validacion de NULL en la asignacion de memoria se hace luego.
 
         # buffer->sizeBytes = sizeInitial;
-	lw	v1,48($fp)      # Cargo en v1 la direccion de buffer.
-	lw	v0,52($fp)      # Cargo en v0 sizeInitial.
+	lw	v1,60($fp)      # Cargo en v1 la direccion de buffer.
+	lw	v0,64($fp)      # Cargo en v0 sizeInitial.
 	sw	v0,8(v1)        # Cargo en v0 buffer -> sizeBytes. sizeBytes es el tercer elemento 
                                 # del struct Buffer.
 	b	verifyMemory    # Salto incondicional para verificar la asignacion de memoria.
 compareQuantities:
         # (buffer->quantityCharactersInBuffer >= buffer->sizeBytes) ?
-        lw      v0,48($fp)     # Cargo en v0 la direccion de buffer.
-        lw      v1,52($fp)     # Cargo en v1 la direccion de buffer.
+        lw      v0,60($fp)     # Cargo en v0 la direccion de buffer.
+        lw      v1,60($fp)     # Cargo en v1 la direccion de buffer.
         lw      a0,4(v0)       # Cargo en a0 buffer->quantityCharactersInBuffer. En el struct
                                # Buffer quantityCharactersInBuffer es el segundo elemento.
         lw      v0,8(v1)       # Cargo en v0 buffer->sizeBytes. En el struct
@@ -822,47 +821,47 @@ compareQuantities:
         # buffer->quantityCharactersInBuffer is >= than buffer->sizeBytes
 
         # size_t bytesLexicoPreview = buffer->sizeBytes;
-	lw	v0,48($fp)     # Cargo en v0 la direccion de buffer.
+	lw	v0,60($fp)     # Cargo en v0 la direccion de buffer.
 	lw	v0,8(v0)       # Cargo en v0 buffer->sizeBytes. En el struct
                                # Buffer sizeBytes es el tercer elemento.
-	sw	v0,20($fp)     # Cargo en la direccion de memoria 20($fp) el valor de 
+	sw	v0,28($fp)     # Cargo en la direccion de memoria 28($fp) el valor de 
                                # buffer->sizeBytes, que representaria la variabla bytesLexicoPreview.
 
         # buffer->sizeBytes = bytesLexicoPreview * 2;
-	lw	v1,48($fp)     # Cargo en v1 la direccion de buffer.
-	lw	v0,20($fp)     # Cargo en v0 bytesLexicoPreview.
+	lw	v1,60($fp)     # Cargo en v1 la direccion de buffer.
+	lw	v0,28($fp)     # Cargo en v0 bytesLexicoPreview.
 	sll	v0,v0,1        # bytesLexicoPreview * 2 y guardo resultado en v0.
                                # 1 porque 2 elevado a 1 es igual a 2.
 	sw	v0,8(v1)       # Guardo el resultado de la multiplicacion en buffer->sizeBytes.
 
         # char * auxiliary = myRealloc(buffer->buffer, buffer->sizeBytes*sizeof(char), bytesLexicoPreview);
-	lw	v0,48($fp)     # Cargo en v0 la direccion de buffer
-	lw	v1,48($fp)     # Cargo en v1 la direccion de buffer
+	lw	v0,60($fp)     # Cargo en v0 la direccion de buffer
+	lw	v1,60($fp)     # Cargo en v1 la direccion de buffer
 	lw	a0,0(v0)       # Cargo en a0 buffer->buffer. Parametro para myRealloc.
 	lw	a1,8(v1)       # Cargo en a1 buffer->sizeBytes. Parametro para myRealloc. 
-	lw	a2,20($fp)     # Cargo en a2 bytesLexicoPreview. Parametro para myRealloc.
+	lw	a2,28($fp)     # Cargo en a2 bytesLexicoPreview. Parametro para myRealloc.
 	la	t9,myRealloc
 	jal	ra,t9          # Ejecuto la funcion myRealloc.
-	sw	v0,24($fp)     # Guardo en la direccion 24($fp) la memoria reservada.
+	sw	v0,32($fp)     # Guardo en la direccion 32($fp) la memoria reservada.
 
         # (auxiliary == NULL) ?
-	lw	v0,24($fp)     # Cargo en v0 la memoria reservada.
+	lw	v0,32($fp)     # Cargo en v0 la memoria reservada.
 	bne	v0,zero,memoryAllocation # If (auxiliary != NULL) goto memoryAllocation.
 
         # Hubo problemas con la reasignacion de memoria.
-	lw	a0,48($fp)     # Cargo en a0 buffer. Parametro de la funcion cleanContentBuffer.
+	lw	a0,60($fp)     # Cargo en a0 buffer. Parametro de la funcion cleanContentBuffer.
 	la	t9,cleanContentBuffer
 	jal	ra,t9          # Ejecuto la funcion cleanContentBuffer para liberar memoria.
 
 	b	verifyMemory
 memoryAllocation:
         # buffer->buffer = auxiliary;
-	lw	v1,48($fp)
-	lw	v0,24($fp)
+	lw	v1,60($fp)
+	lw	v0,32($fp)
 	sw	v0,0(v1)
 verifyMemory:
         # (buffer->buffer == NULL) ?
-	lw	v0,48($fp)
+	lw	v0,60($fp)
 	lw	v0,0(v0)
 	bne	v0,zero,loadCharacterInBuffer # If (buffer->buffer != NULL) goto loadCharacterInBuffer
 
@@ -875,36 +874,36 @@ verifyMemory:
 	
         # return ERROR_MEMORY;
 	li	v0,ERROR_MEMORY
-	sw	v0,28($fp)      # Guardo en la direccion 28($fp) el codigo de error, 
+	sw	v0,36($fp)      # Guardo en la direccion 36($fp) el codigo de error, 
                                 # resultado de la funcion.
 	b	returnLoadInBuffer
 loadCharacterInBuffer:
         # buffer->buffer[buffer->quantityCharactersInBuffer] = character;
-	lw	v0,48($fp)
-	lw	v1,48($fp)
+	lw	v0,60($fp)
+	lw	v1,60($fp)
 	lw	a0,0(v0)       # Cargo en a0 buffer->buffer
 	lw	v0,4(v1)       # Cargo en v0 buffer->quantityCharactersInBuffer
 	addu	v1,a0,v0       # Corrimiento sobre buffer->buffer. Guardo en v1
-	lbu	v0,16($fp)     # Carga character en v0
+	lbu	v0,24($fp)     # Carga character en v0
 	sb	v0,0(v1)       # Asigno character a esa direccion de memoria.
 
         # buffer->quantityCharactersInBuffer ++;
-	lw	v1,48($fp)
-	lw	v0,48($fp)
+	lw	v1,60($fp)
+	lw	v0,60($fp)
 	lw	v0,4(v0)
 	addu	v0,v0,1
 	sw	v0,4(v1)
 
         # return OKEY;
-	sw	zero,28($fp)    # OKEY = 0
+	sw	zero,36($fp)    # OKEY = 0
 returnLoadInBuffer:
-	lw	v0,28($fp)
+	lw	v0,36($fp)
 	move	sp,$fp
-	lw	ra,44(sp)
-	lw	$fp,40(sp)
-	lw	s0,32(sp)
+	lw	ra,52(sp)
+	lw	$fp,48(sp)
+	lw	s0,40(sp)
         # destruyo stack frame
-	addu	sp,sp,48
+	addu	sp,sp,56
         # vuelvo a funcion llamante
 	j	ra
 
@@ -917,55 +916,55 @@ returnLoadInBuffer:
 	.globl	cleanContentBuffer
 	.ent	cleanContentBuffer
 cleanContentBuffer:
-	.frame	$fp,20,ra
+	.frame	$fp,40,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 
         # Stack frame creation
-	subu	sp,sp,32
+	subu	sp,sp,40
 
 	.cprestore 16
-	sw	ra,24(sp)
-	sw	$fp,20(sp)
-	sw	gp,16(sp)
+	sw	ra,32(sp)
+	sw	$fp,28(sp)
+	sw	gp,24(sp)
 
         # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
 
         # Parametro
-	sw	a0,32($fp)      # Guardo en la direccion 32($fp) el parametro * buffer (Buffer * buffer).
+	sw	a0,40($fp)      # Guardo en la direccion 40($fp) el parametro * buffer (Buffer * buffer).
 
         # (buffer->buffer != NULL) ?
-	lw	v0,32($fp)	
+	lw	v0,40($fp)	
 	lw	v0,0(v0)        # Cargo en v0 buffer -> buffer
 	beq	v0,zero,cleanQuantities # If (buffer->buffer == NULL) goto cleanQuantities
 
         # buffer->buffer is not NULL
 
         # free(buffer->buffer);		
-	lw	v0,32($fp)
+	lw	v0,40($fp)
 	lw	a0,0(v0)
 	la	t9,myfree
 	jal	ra,t9
 
         # buffer->buffer = NULL;
-	lw	v0,32($fp)
+	lw	v0,40($fp)
 	sw	zero,0(v0)
 cleanQuantities:
         # buffer->quantityCharactersInBuffer = 0;
-	lw	v0,32($fp)
+	lw	v0,40($fp)
 	sw	zero,4(v0)
 
         # buffer->sizeBytes = 0;
-	lw	v0,32($fp)
+	lw	v0,40($fp)
 	sw	zero,8(v0)
 
 	move	sp,$fp
-	lw	ra,24(sp)
-	lw	$fp,20(sp)
+	lw	ra,32(sp)
+	lw	$fp,28(sp)
         # destruyo stack frame
-	addu	sp,sp,32
+	addu	sp,sp,40
         # vuelvo a funcion llamante
 	j	ra
 
