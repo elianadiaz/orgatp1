@@ -921,6 +921,7 @@ cleanContentBuffer:
 	.cpload	t9
 	.set	reorder
 
+        # Stack frame creation
 	subu	sp,sp,40
 
 	.cprestore 16
@@ -928,6 +929,7 @@ cleanContentBuffer:
 	sw	$fp,28(sp)
 	sw	gp,24(sp)
 
+        # de aqui al fin de la funcion uso $fp en lugar de sp.
 	move	$fp,sp
 
         # Parametro
@@ -965,6 +967,7 @@ cleanQuantities:
 	addu	sp,sp,40
         # vuelvo a funcion llamante
 	j	ra
+
 	.end	cleanContentBuffer
 
 
@@ -1062,6 +1065,7 @@ MENSAJE_ERROR_MEMORIA_OBUFFER:
 	.ascii	"[Error] Hubo un error de asignacion de memoria (obuffer)"
 	.ascii	". \n\000"
 
+	.align	2
 MENSAJE_ERROR_MEMORIA_BUFFER:
 	.ascii	"[Error] Hubo un error de asignacion de memoria (buffer)"
 	.ascii	". \n\000"

@@ -1,20 +1,9 @@
 /*
  * palindromeFunctions.c
  *
- *  Created on: Oct 18, 2017
- *      Author: ediaz
  */
 
-// TODO ACA VAN LAS FUNCIONES RELACIONADAS A PALINDROMES:
-// toLowerCase  , verifyPalindromic , isKeywords , palindrome
-
 #include "palindromeFunctions.h"
-
-/*
-char * lexico = NULL;
-int quantityCharacterInLexico = 0;
-size_t sizeLexico = 0;
-*/
 
 Buffer lexico;
 
@@ -101,7 +90,7 @@ int saveIfPalindrome() {
 		}
 
 		if (error == TRUE) {
-			fprintf(stderr, "[Error] Error al escribir en el archivo output la palabra %s", lexico.buffer);
+			fprintf(stderr, "[Error] Error al escribir en el archivo output el palindromos. \n");
 			return ERROR_PUTCH;
 		}
 	}
